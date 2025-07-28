@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useToast } from '@/components/ui/Toast'
 import { useSystemStore } from '@/lib/store'
 
@@ -21,8 +22,13 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({ service }: ServiceCardProps) {
+  const [mounted, setMounted] = useState(false)
   const { ToastContainer } = useToast()
   const { replaceLocalhostWithIP } = useSystemStore()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -100,11 +106,16 @@ export default function ServiceCard({ service }: ServiceCardProps) {
     }
   }
 
-  // 获取访问URL，自动替换localhost
+  // 获取访问URL，只在客户端渲染时替换localhost
   const getAccessUrl = () => {
     if (!service.url) return null
     
-    // 使用全局store的替换函数
+    // 在服务器端渲染时，直接返回原始URL
+    if (!mounted) {
+      return service.url
+    }
+    
+    // 在客户端渲染时，使用全局store的替换函数
     return replaceLocalhostWithIP(service.url)
   }
 

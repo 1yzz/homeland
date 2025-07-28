@@ -105,23 +105,7 @@ export default function ServiceManager() {
     })
   }
 
-  const handleControl = async (service: Service, action: 'start' | 'stop') => {
-    try {
-      const response = await fetch(`/api/admin/services/${service.id}/${action}`, {
-        method: 'POST',
-      })
 
-      if (response.ok) {
-        showToast('success', `服务${action === 'start' ? '启动' : '停止'}成功`)
-        refreshServices()
-      } else {
-        const error = await response.json()
-        showToast('error', `${action === 'start' ? '启动' : '停止'}失败: ${error.error}`)
-      }
-    } catch (error) {
-      showToast('error', `${action === 'start' ? '启动' : '停止'}失败，请重试`)
-    }
-  }
 
   const handleEdit = (service: Service) => {
     setEditingService(service)
@@ -174,7 +158,6 @@ export default function ServiceManager() {
           services={services}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onControl={handleControl}
           loading={loading}
         />
       )}

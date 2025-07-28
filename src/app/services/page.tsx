@@ -4,9 +4,9 @@ import ServiceManager from '@/components/admin/ServiceManager'
 async function getServiceStats() {
   try {
     const [total, running, stopped] = await Promise.all([
-      prisma.Service.count(),
-      prisma.Service.count({ where: { status: 'RUNNING' } }),
-      prisma.Service.count({ where: { status: 'STOPPED' } })
+      prisma.service.count(),
+      prisma.service.count({ where: { status: 'RUNNING' } }),
+      prisma.service.count({ where: { status: 'STOPPED' } })
     ])
     return { total, running, stopped }
   } catch (error) {

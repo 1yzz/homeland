@@ -4,9 +4,16 @@ import { prisma } from '@/lib/db'
 // 获取所有服务
 export async function GET() {
   try {
-    const services = await prisma.Service.findMany({
+    const services = await prisma.service.findMany({
       orderBy: {
         name: 'asc'
+      },
+      include: {
+        healthChecks: true,
+        healthCheckResults: {
+          orderBy: { lastChecked: 'desc' },
+          take: 1
+        }
       }
     })
     
@@ -28,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查服务名称是否已存在
-    const existingService = await prisma.Service.findUnique({
+    const existingService = await prisma.service.findUnique({
       where: { name: data.name }
     })
 
@@ -36,7 +43,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '服务名称已存在' }, { status: 409 })
     }
 
-    const service = await prisma.Service.create({
+    // 创建服务
+    const service = await prisma.service.create({
       data: {
         name: data.name,
         type: data.type,
@@ -44,9 +52,29 @@ export async function POST(request: NextRequest) {
         port: data.port,
         status: 'STOPPED',
         description: data.description,
-        serviceType: data.serviceType,
       }
     })
+
+    // 如果提供了健康检查配置，创建健康检查
+    if (data.healthCheck && data.healthCheck.enabled) {
+      await prisma.healthCheckConfig.create({
+        data: {
+          serviceId: service.id,
+          type: data.healthCheck.type,
+          url: data.healthCheck.url,
+          port: data.healthCheck.port,
+          command: data.healthCheck.command,
+          script: data.healthCheck.script,
+          timeout: data.healthCheck.timeout,
+          interval: data.healthCheck.interval,
+          retries: data.healthCheck.retries,
+          expectedStatus: data.healthCheck.expectedStatus,
+          expectedResponse: data.healthCheck.expectedResponse,
+          method: data.healthCheck.method,
+          enabled: data.healthCheck.enabled,
+        }
+      })
+    }
     
     return NextResponse.json(service, { status: 201 })
   } catch (error) {

@@ -9,7 +9,7 @@ export async function GET() {
     
     // 将检测到的服务更新到数据库中
     for (const service of detectedServices) {
-      await prisma.Service.upsert({
+      await prisma.service.upsert({
         where: {
           name: service.name
         },
@@ -29,7 +29,7 @@ export async function GET() {
     }
     
     // 获取所有服务
-    const allServices = await prisma.Service.findMany({
+    const allServices = await prisma.service.findMany({
       orderBy: {
         port: 'asc'
       }
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   try {
     const data = await request.json()
     
-    const service = await prisma.Service.create({
+    const service = await prisma.service.create({
       data: {
         name: data.name,
         url: data.url,

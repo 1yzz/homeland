@@ -20,11 +20,10 @@ interface ServiceTableProps {
   services: Service[]
   onEdit: (service: Service) => void
   onDelete: (service: Service) => void
-  onControl: (service: Service, action: 'start' | 'stop') => void
   loading: boolean
 }
 
-export default function ServiceTable({ services, onEdit, onDelete, onControl, loading }: ServiceTableProps) {
+export default function ServiceTable({ services, onEdit, onDelete, loading }: ServiceTableProps) {
   const { showToast, ToastContainer } = useToast()
   const { showConfirm, ConfirmDialogComponent } = useConfirmDialog()
 
@@ -204,25 +203,6 @@ export default function ServiceTable({ services, onEdit, onDelete, onControl, lo
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div className="flex space-x-2">
-                  {/* 启动/停止按钮 */}
-                  {service.status === 'RUNNING' ? (
-                    <button
-                      onClick={() => onControl(service, 'stop')}
-                      disabled={loading}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
-                    >
-                      停止
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => onControl(service, 'start')}
-                      disabled={loading}
-                      className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 disabled:opacity-50"
-                    >
-                      启动
-                    </button>
-                  )}
-
                   {/* 编辑按钮 */}
                   <button
                     onClick={() => onEdit(service)}

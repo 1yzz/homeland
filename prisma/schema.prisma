@@ -25,7 +25,50 @@ model Service {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // 关联健康检查配置和结果
+  healthChecks HealthCheckConfig[]
+  healthCheckResults HealthCheckResult[]
+
   @@map("services")
+}
+
+model HealthCheckConfig {
+  id              Int           @id @default(autoincrement())
+  serviceId       Int
+  type            HealthCheckType
+  url             String?
+  port             Int?
+  command         String?
+  script           String?
+  timeout         Int           @default(10000) // 毫秒
+  interval        Int           @default(30000) // 毫秒
+  retries         Int           @default(3)
+  expectedStatus  Int?
+  expectedResponse String?
+  method          HttpMethod    @default(GET)
+  enabled         Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // 关联服务
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@map("health_check_configs")
+}
+
+model HealthCheckResult {
+  id          Int      @id @default(autoincrement())
+  serviceId   Int
+  status      HealthStatus
+  responseTime Int     // 毫秒
+  lastChecked DateTime @default(now())
+  error       String?
+  details     Json?    // 存储详细信息
+
+  // 关联服务
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@map("health_check_results")
 }
 
 enum ServiceType {
@@ -45,4 +88,24 @@ enum ServiceStatus {
   ERROR        // 错误状态
   STARTING     // 启动中
   STOPPING     // 停止中
+}
+
+enum HealthCheckType {
+  HTTP         // HTTP健康检查
+  TCP          // TCP端口检查
+  COMMAND      // 命令执行检查
+  SCRIPT       // 脚本执行检查
+}
+
+enum HealthStatus {
+  HEALTHY      // 健康
+  UNHEALTHY    // 不健康
+  UNKNOWN      // 未知状态
+}
+
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  DELETE
 }
