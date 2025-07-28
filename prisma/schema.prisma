@@ -1,0 +1,48 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Service {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  type        ServiceType
+  url         String?
+  port        Int?
+  status      ServiceStatus @default(STOPPED)
+  description String?
+  lastChecked DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("services")
+}
+
+enum ServiceType {
+  HTTP         // HTTP服务 (包含Web、API、微服务等)
+  GRPC         // gRPC服务
+  SYSTEMD      // Systemd服务
+  SUPERVISORD  // Supervisord服务
+  DOCKER       // Docker容器
+  DATABASE     // 数据库服务
+  CACHE        // 缓存服务
+  CUSTOM       // 自定义服务
+}
+
+enum ServiceStatus {
+  RUNNING      // 运行中
+  STOPPED      // 已停止
+  ERROR        // 错误状态
+  STARTING     // 启动中
+  STOPPING     // 停止中
+}
