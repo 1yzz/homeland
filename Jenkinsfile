@@ -7,10 +7,6 @@ pipeline {
         
         // 系统配置
         NODE_ENV = 'production'
-        
-        // 部署配置
-        DEPLOY_PATH = '/var/www/homeland'
-        PM2_APP_NAME = 'homeland'
     }
     
     stages {
@@ -42,17 +38,6 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                # 创建部署目录
-                sudo mkdir -p ''' + DEPLOY_PATH + '''
-                sudo chown $USER:$USER ''' + DEPLOY_PATH + '''
-                
-                # 复制文件到部署目录
-                cp -r . ''' + DEPLOY_PATH + '''/
-                cd ''' + DEPLOY_PATH + '''
-                
-                # 设置执行权限
-                chmod +x docker-deploy.sh
-                
                 # 停止并删除现有容器
                 docker stop homeland-app || true
                 docker rm homeland-app || true
