@@ -3,7 +3,8 @@ pipeline {
     
     environment {
         // 数据库配置
-        DATABASE_URL = credentials('homeland-database-url')
+        DATABASE_URL = credentials('VaioMysql')
+        DATABASE_TABLE = 'homeland_sites'
         
         // 系统配置
         NODE_ENV = 'production'
@@ -169,8 +170,10 @@ pipeline {
             echo '部署失败，请检查日志'
         }
         cleanup {
-            // 清理工作空间
-            cleanWs()
+            // 清理工作空间 - 使用node块提供上下文
+            node {
+                cleanWs()
+            }
         }
     }
 } 
