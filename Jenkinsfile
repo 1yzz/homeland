@@ -32,7 +32,7 @@ pipeline {
                 # 验证环境
                 echo "Node.js版本: $(node --version)"
                 echo "npm版本: $(npm --version)"
-                echo "pnpm版本: $(pnpm --version)"
+                echo "使用npm作为包管理器"
                 '''
             }
         }
@@ -44,7 +44,7 @@ pipeline {
                 export PATH=$PATH:/root/.nvm/versions/node/$NODE_VERSION/bin
                 
                 # 安装依赖
-                pnpm ci --production=false
+                npm ci
                 echo '依赖安装完成'
                 
                 # 生成Prisma客户端
@@ -52,11 +52,11 @@ pipeline {
                 echo 'Prisma客户端生成完成'
                 
                 # 构建应用
-                pnpm run build
+                npm run build
                 echo '应用构建完成'
                 
                 # 运行代码检查
-                pnpm run lint
+                npm run lint
                 echo '代码检查完成'
                 '''
             }
@@ -77,14 +77,14 @@ pipeline {
                 cd ''' + DEPLOY_PATH + '''
                 
                 # 安装生产依赖
-                pnpm ci --only=production
+                npm ci --only=production
                 
                 # 生成Prisma客户端
                 npx prisma generate
                 
                 # 使用PM2启动应用
                 pm2 delete ''' + PM2_APP_NAME + ''' || true
-                pm2 start pnpm --name "''' + PM2_APP_NAME + '''" -- start
+                pm2 start npm --name "''' + PM2_APP_NAME + '''" -- start
                 pm2 save
                 
                 echo '应用部署完成'
