@@ -26,7 +26,6 @@ pipeline {
                 sh '''
                 # 验证Docker环境
                 docker --version
-                docker-compose --version
                 echo 'Docker环境验证完成'
                 
                 # 验证数据库连接配置
@@ -55,17 +54,17 @@ pipeline {
                 chmod +x docker-deploy.sh
                 
                 # 停止现有容器
-                docker-compose down || true
+                docker compose down || true
                 
                 # 构建并启动Docker容器
-                docker-compose build --no-cache
-                docker-compose up -d
+                docker compose build --no-cache
+                docker compose up -d
                 
                 # 等待容器启动
                 sleep 15
                 
                 # 运行数据库迁移
-                docker-compose exec -T app npx prisma db push || true
+                docker compose exec -T app npx prisma db push || true
                 
                 echo '应用部署完成'
                 '''
