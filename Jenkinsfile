@@ -3,8 +3,7 @@ pipeline {
     
     environment {
         // 数据库配置
-        DATABASE_URL = credentials('VaioMysql')
-        DATABASE_TABLE = 'homeland_sites'
+        DATABASE_URL = credentials('VaioMysql') + "homeland_sites"
         
         // 系统配置
         NODE_ENV = 'production'
