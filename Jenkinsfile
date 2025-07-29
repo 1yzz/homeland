@@ -20,6 +20,8 @@ pipeline {
         stage('Verify Environment') {
             steps {
                 sh '''
+                echo "当前用户: $(whoami)"
+                
                 # 验证Docker环境
                 docker --version
                 echo 'Docker环境验证完成'
