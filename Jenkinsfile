@@ -1,16 +1,13 @@
 pipeline {
     agent any
     
-    tools {
-        nodejs 'NodeJS-18.20.0'  // 在Jenkins中配置的Node.js工具名称
-    }
-    
     environment {
         // 数据库配置
         DATABASE_URL = credentials('homeland-database-url')
         
         // 系统配置
         NODE_ENV = 'production'
+        NODE_VERSION = '18.20.0'
         
         // 部署配置
         DEPLOY_PATH = '/var/www/homeland'
@@ -25,9 +22,33 @@ pipeline {
             }
         }
         
+        stage('Setup Node.js') {
+            steps {
+                sh '''
+                # 设置Node.js环境
+                export NVM_DIR="$HOME/.nvm"
+                [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+                
+                # 使用指定版本的Node.js
+                nvm use ''' + NODE_VERSION + '''
+                nvm alias default ''' + NODE_VERSION + '''
+                
+                # 验证Node.js版本
+                echo "Node.js版本: $(node --version)"
+                echo "npm版本: $(npm --version)"
+                echo "pnpm版本: $(pnpm --version)"
+                '''
+            }
+        }
+        
         stage('Install Dependencies') {
             steps {
                 sh '''
+                # 设置Node.js环境
+                export NVM_DIR="$HOME/.nvm"
+                [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+                nvm use ''' + NODE_VERSION + '''
+                
                 # 安装依赖
                 pnpm ci --production=false
                 echo '依赖安装完成'
@@ -38,6 +59,11 @@ pipeline {
         stage('Database Setup') {
             steps {
                 sh '''
+                # 设置Node.js环境
+                export NVM_DIR="$HOME/.nvm"
+                [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+                nvm use ''' + NODE_VERSION + '''
+                
                 # 生成Prisma客户端
                 npx prisma generate
                 echo 'Prisma客户端生成完成'
@@ -48,6 +74,11 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''
+                # 设置Node.js环境
+                export NVM_DIR="$HOME/.nvm"
+                [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+                nvm use ''' + NODE_VERSION + '''
+                
                 # 构建应用
                 pnpm run build
                 echo '应用构建完成'
@@ -58,6 +89,11 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
+                # 设置Node.js环境
+                export NVM_DIR="$HOME/.nvm"
+                [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+                nvm use ''' + NODE_VERSION + '''
+                
                 # 运行代码检查
                 pnpm run lint
                 echo '代码检查完成'
@@ -68,6 +104,11 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
+                # 设置Node.js环境
+                export NVM_DIR="$HOME/.nvm"
+                [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+                nvm use ''' + NODE_VERSION + '''
+                
                 # 创建部署目录
                 sudo mkdir -p ''' + DEPLOY_PATH + '''
                 sudo chown $USER:$USER ''' + DEPLOY_PATH + '''
