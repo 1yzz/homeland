@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+// import { Geist, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import AppLayout from "@/components/AppLayout";
 import { initializeApp } from "@/lib/startup";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+// const geistSans = Geist({
+//   variable: "--font-geist-sans",
+//   subsets: ["latin"],
+// });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// const jetbrainsMono = JetBrains_Mono({
+//   variable: "--font-geist-mono",
+//   subsets: ["latin"],
+// });
 
 export const metadata: Metadata = {
   title: "Homeland Services - 服务监控系统",
@@ -47,7 +47,8 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        // className={`${geistSans.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`antialiased`}
       >
         <AppLayout>{children}</AppLayout>
       </body>

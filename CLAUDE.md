@@ -44,9 +44,9 @@ npx prisma studio          # Open Prisma Studio for database inspection
 - Stores service metadata including commands, working directories, and environment variables
 
 **API Routes**:
-- `GET /api/services` - Runs service discovery, updates database, returns all services
-- `POST /api/services` - Creates new service entry
-- `POST /api/services/scan` - Triggers service discovery scan only
+- `GET /api/services` - Returns all services from database (no auto-scanning)
+- `POST /api/services/scan` - Triggers service discovery scan only (returns discoverable services)
+- `POST /api/admin/services` - Creates new service entry (unified endpoint with auto health check)
 
 **Frontend Components**:
 - `ServiceCard` - Displays individual service with status indicators and "Visit Service" links
@@ -56,7 +56,7 @@ npx prisma studio          # Open Prisma Studio for database inspection
 
 1. User clicks "Scan Services" → triggers `/api/services/scan`
 2. `scanRunningServices()` executes system commands to detect services
-3. Services are upserted into database via `/api/services` endpoint
+3. User selects services to add → created via `/api/admin/services` endpoint with automatic health check configuration
 4. Main page displays services from database with real-time status
 
 ### Database Schema Notes

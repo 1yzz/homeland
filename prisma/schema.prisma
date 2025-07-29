@@ -29,6 +29,10 @@ model Service {
   healthChecks HealthCheckConfig[]
   healthCheckResults HealthCheckResult[]
 
+  @@index([status])
+  @@index([lastChecked])
+  @@index([createdAt])
+  @@index([status, createdAt])
   @@map("services")
 }
 
@@ -40,8 +44,8 @@ model HealthCheckConfig {
   port             Int?
   command         String?
   script           String?
-  timeout         Int           @default(10000) // 毫秒
-  interval        Int           @default(30000) // 毫秒
+  timeout         Int           @default(30000) // 毫秒
+  interval        Int           @default(60000) // 毫秒
   retries         Int           @default(3)
   expectedStatus  Int?
   expectedResponse String?
@@ -53,6 +57,9 @@ model HealthCheckConfig {
   // 关联服务
   service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
+  @@index([serviceId])
+  @@index([enabled])
+  @@index([serviceId, enabled])
   @@map("health_check_configs")
 }
 
@@ -68,6 +75,9 @@ model HealthCheckResult {
   // 关联服务
   service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
+  @@index([serviceId])
+  @@index([lastChecked])
+  @@index([serviceId, lastChecked])
   @@map("health_check_results")
 }
 

@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server'
 import { scanRunningServices } from '@/lib/serviceDiscovery'
 import { scanAllSystemServices } from '@/lib/systemServiceScanner'
+import { prisma } from '@/lib/db'
 
 export async function POST() {
   try {
+    // 获取已存在的服务，避免重复推荐
+    const existingServices = await prisma.service.findMany({
+      select: { name: true, port: true }
+    })
+    
+    const existingKeys = new Set(
+      existingServices.map(s => `${s.name}-${s.port || 'noport'}`)
+    )
+    
     // 并行扫描网络服务和系统服务
     const [networkServices, systemServices] = await Promise.allSettled([
       scanRunningServices(),
@@ -37,13 +47,14 @@ export async function POST() {
     }
     
     // 去重处理：优先保留系统服务，因为它们包含更多信息
+    // 同时过滤掉已存在于数据库中的服务
     const uniqueServices = []
     const seenServices = new Set()
     
     // 先添加系统服务
     for (const service of allServices.filter(s => s.source === 'system')) {
       const key = `${service.name}-${service.port || 'noport'}`
-      if (!seenServices.has(key)) {
+      if (!seenServices.has(key) && !existingKeys.has(key)) {
         seenServices.add(key)
         uniqueServices.push(service)
       }
@@ -52,7 +63,7 @@ export async function POST() {
     // 再添加不重复的网络服务
     for (const service of allServices.filter(s => s.source === 'network')) {
       const key = `${service.name}-${service.port || 'noport'}`
-      if (!seenServices.has(key)) {
+      if (!seenServices.has(key) && !existingKeys.has(key)) {
         seenServices.add(key)
         uniqueServices.push(service)
       }

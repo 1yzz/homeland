@@ -62,7 +62,7 @@ export interface ServiceHealthStatus {
 
 export class ServiceHealthMonitor {
   private healthChecks: Map<number, HealthCheckConfig> = new Map();
-  private results: Map<number, HealthCheckResult> = new Map();
+  public results: Map<number, HealthCheckResult> = new Map(); // 改为public以便GlobalHealthMonitor访问
   private timers: Map<number, NodeJS.Timeout> = new Map();
   private syncedResults: Set<string> = new Set(); // 记录已同步的结果
 
@@ -96,16 +96,16 @@ export class ServiceHealthMonitor {
   private async detectHTTPHealthCheck(serviceName: string, serviceUrl?: string): Promise<Partial<HealthCheckConfig>> {
     // 如果提供了服务URL，优先使用
     if (serviceUrl) {
-      try {
+        try {
         const response = await fetch(serviceUrl, { 
-          method: 'GET',
-          signal: AbortSignal.timeout(5000)
-        });
-        
+            method: 'GET',
+            signal: AbortSignal.timeout(15000)
+          });
+          
         return {
           type: 'HTTP',
           url: serviceUrl,
-          timeout: 10000,
+          timeout: 30000,
           interval: 60000,
           retries: 3,
           expectedStatus: response.ok ? 200 : response.status,
@@ -114,16 +114,16 @@ export class ServiceHealthMonitor {
         };
       } catch (error) {
         // 如果配置的URL失败，返回配置但标记为可能有问题
-        return {
-          type: 'HTTP',
+            return {
+              type: 'HTTP',
           url: serviceUrl,
-          timeout: 10000,
+              timeout: 30000,
           interval: 60000,
-          retries: 3,
-          expectedStatus: 200,
-          method: 'GET',
-          enabled: true
-        };
+              retries: 3,
+              expectedStatus: 200,
+              method: 'GET',
+              enabled: true
+            };
       }
     }
 
@@ -131,7 +131,7 @@ export class ServiceHealthMonitor {
     return {
       type: 'HTTP',
       url: '',
-      timeout: 10000,
+      timeout: 30000,
       interval: 60000,
       retries: 3,
       expectedStatus: 200,
@@ -155,7 +155,7 @@ export class ServiceHealthMonitor {
             type: 'COMMAND',
             command: `grpcurl -plaintext localhost:${port} grpc.health.v1.Health/Check`,
             port,
-            timeout: 10000,
+            timeout: 30000,
             interval: 60000,
             retries: 3,
             enabled: true
@@ -169,7 +169,7 @@ export class ServiceHealthMonitor {
     return {
       type: 'COMMAND',
       command: `grpcurl -plaintext localhost:50051 grpc.health.v1.Health/Check`,
-      timeout: 10000,
+      timeout: 30000,
       interval: 60000,
       retries: 3,
       enabled: true
@@ -335,7 +335,7 @@ export class ServiceHealthMonitor {
 
       const response = await fetch(config.url!, {
         method: config.method || 'GET',
-        signal: controller.signal
+        signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
@@ -350,7 +350,7 @@ export class ServiceHealthMonitor {
         lastChecked: new Date(),
         details: {
           statusCode: response.status,
-          responseBody: await response.text()
+          responseBody: await response.text().catch(() => 'Unable to read response body')
         }
       };
     } catch (error: any) {
@@ -577,6 +577,7 @@ export class ServiceHealthMonitor {
       const results = this.getAllHealthResults();
       let syncedCount = 0;
       let errorCount = 0;
+      let hasStatusChanges = false;
 
       for (const result of results) {
         try {
@@ -587,6 +588,12 @@ export class ServiceHealthMonitor {
           if (this.syncedResults.has(resultId)) {
             continue;
           }
+
+          // 获取当前服务状态以检查是否有变化
+          const currentService = await prisma.service.findUnique({
+            where: { id: result.serviceId },
+            select: { status: true }
+          });
 
           // 只同步错误状态的结果到数据库
           if (result.status === 'UNHEALTHY') {
@@ -605,6 +612,13 @@ export class ServiceHealthMonitor {
 
           // 更新服务状态
           const serviceStatus = result.status === 'HEALTHY' ? 'RUNNING' : 'ERROR';
+          
+          // 检查状态是否发生变化
+          if (currentService && currentService.status !== serviceStatus) {
+            hasStatusChanges = true;
+            console.log(`🔄 Status change detected for service ${result.serviceId}: ${currentService.status} → ${serviceStatus}`);
+          }
+          
           await prisma.service.update({
             where: { id: result.serviceId },
             data: { 
@@ -624,9 +638,19 @@ export class ServiceHealthMonitor {
 
       if (syncedCount > 0) {
         console.log(`Synced ${syncedCount} results to database (${errorCount} errors recorded)`);
+        
+        // 如果有状态变化，触发页面更新
+        if (hasStatusChanges) {
+          console.log('🚀 Triggering page update due to status changes...');
+          await this.triggerPageUpdate();
+        } else {
+          console.log('📊 No status changes detected, skipping page update');
+        }
+        
+
       }
 
-      // 清理旧的同步记录（避免内存泄漏）
+      // 清理内存中的已同步结果，防止内存泄漏
       if (this.syncedResults.size > 1000) {
         const oldEntries = Array.from(this.syncedResults).slice(0, 500);
         oldEntries.forEach(entry => this.syncedResults.delete(entry));
@@ -634,6 +658,27 @@ export class ServiceHealthMonitor {
 
     } catch (error) {
       console.error('Failed to sync health check results to database:', error);
+    }
+  }
+
+  /**
+   * 触发页面更新
+   */
+  private async triggerPageUpdate() {
+    try {
+      // 动态导入以避免循环依赖
+      const { broadcastUpdate } = await import('@/app/api/sse/route');
+      
+      // 广播更新通知给前端客户端
+      broadcastUpdate({
+        type: 'service_status_update',
+        timestamp: new Date().toISOString(),
+        message: 'Service status updated'
+      });
+      
+      console.log('🔄 Page update triggered due to service status changes');
+    } catch (error) {
+      console.error('Failed to trigger page update:', error);
     }
   }
 
@@ -666,7 +711,7 @@ export class ServiceHealthMonitor {
 }
 
 // 创建默认实例
-export const serviceHealthMonitor = new ServiceHealthMonitor();
+export const serviceHealthMonitor = new ServiceHealthMonitor(); 
 
 // 全局定时监控管理器
 export class GlobalHealthMonitor {
@@ -705,9 +750,8 @@ export class GlobalHealthMonitor {
       await this.performGlobalHealthCheck();
     }, 60000); // 1分钟间隔
 
-    // 设置独立的同步定时器，每5分钟同步一次
+    // 设置独立的清理定时器，每5分钟清理一次内存
     this.syncTimer = setInterval(async () => {
-      await serviceHealthMonitor.syncResultsToDatabase();
       serviceHealthMonitor.cleanupMemoryResults();
     }, 300000); // 5分钟间隔
   }
@@ -760,58 +804,31 @@ export class GlobalHealthMonitor {
         try {
           const result = await serviceHealthMonitor.performHealthCheck(config);
           
-          // 只在检查失败时保存记录到数据库
+          // 只打印失败状态的日志，不直接写数据库
           if (result.status === 'UNHEALTHY') {
-            await this.prisma.healthCheckResult.create({
-              data: {
-                serviceId: config.serviceId,
-                status: result.status,
-                responseTime: result.responseTime,
-                lastChecked: result.lastChecked,
-                error: result.error,
-                details: result.details
-              }
-            });
-            
             console.log(`Service ${config.service.name} (${config.serviceId}): ${result.status} - ${result.error}`);
           }
 
-          // 更新服务状态
-          const serviceStatus = result.status === 'HEALTHY' ? 'RUNNING' : 'ERROR';
-          await this.prisma.service.update({
-            where: { id: config.serviceId },
-            data: { 
-              status: serviceStatus,
-              lastChecked: new Date()
-            }
-          });
-
-          return { serviceId: config.serviceId, status: result.status };
+          return { serviceId: config.serviceId, status: result.status, result };
         } catch (error) {
           console.error(`Health check failed for service ${config.serviceId}:`, error);
           
-          // 记录错误结果
-          await this.prisma.healthCheckResult.create({
-            data: {
-              serviceId: config.serviceId,
-              status: 'UNHEALTHY',
-              responseTime: 0,
-              lastChecked: new Date(),
-              error: error instanceof Error ? error.message : 'Unknown error',
-              details: { error: error }
+          // 创建错误结果对象，让 syncResultsToDatabase 统一处理
+          const errorResult: HealthCheckResult = {
+            serviceId: config.serviceId,
+            status: 'UNHEALTHY',
+            responseTime: 0,
+            lastChecked: new Date(),
+            error: error instanceof Error ? error.message : 'Unknown error',
+            details: { 
+              responseBody: error instanceof Error ? error.message : 'Unknown error'
             }
-          });
+          };
+          
+          // 将错误结果存储到内存中
+          serviceHealthMonitor.results.set(config.serviceId, errorResult);
 
-          // 更新服务状态为错误
-          await this.prisma.service.update({
-            where: { id: config.serviceId },
-            data: { 
-              status: 'ERROR',
-              lastChecked: new Date()
-            }
-          });
-
-          return { serviceId: config.serviceId, status: 'UNHEALTHY' };
+          return { serviceId: config.serviceId, status: 'UNHEALTHY', result: errorResult };
         }
       });
 
@@ -820,6 +837,9 @@ export class GlobalHealthMonitor {
       const failedChecks = results.filter(r => r.status === 'rejected').length;
 
       console.log(`Health check completed: ${successfulChecks} successful, ${failedChecks} failed`);
+      
+      // 统一同步所有结果到数据库
+      await serviceHealthMonitor.syncResultsToDatabase();
     } catch (error) {
       console.error('Global health check error:', error);
     }

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 // 获取单个服务
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const serviceId = parseInt(params.id)
+    const { id } = await params
+    const serviceId = parseInt(id)
     if (isNaN(serviceId)) {
       return NextResponse.json({ error: '无效的服务ID' }, { status: 400 })
     }
@@ -29,9 +30,10 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 }
 
 // 更新服务
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const serviceId = parseInt(params.id)
+    const { id } = await params
+    const serviceId = parseInt(id)
     const data = await request.json()
     if (isNaN(serviceId)) {
       return NextResponse.json({ error: '无效的服务ID' }, { status: 400 })
@@ -78,9 +80,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             retries: data.healthCheck.retries,
             expectedStatus: data.healthCheck.expectedStatus,
             expectedResponse: data.healthCheck.expectedResponse,
-            headers: data.healthCheck.headers,
             method: data.healthCheck.method,
-            body: data.healthCheck.body,
             enabled: data.healthCheck.enabled,
           }
         })
@@ -94,9 +94,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // 删除服务
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const serviceId = parseInt(params.id)
+    const { id } = await params
+    const serviceId = parseInt(id)
     if (isNaN(serviceId)) {
       return NextResponse.json({ error: '无效的服务ID' }, { status: 400 })
     }

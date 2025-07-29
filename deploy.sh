@@ -76,7 +76,7 @@ sleep 10
 
 # 健康检查
 echo "🏥 执行健康检查..."
-if curl -f http://localhost:3000/api/system/ip > /dev/null 2>&1; then
+if curl -f http://localhost:3000 > /dev/null 2>&1; then
     echo "✅ 应用启动成功！"
     echo "🌐 访问地址: http://localhost:3000"
     echo "📊 PM2状态:"

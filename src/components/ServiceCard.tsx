@@ -1,9 +1,3 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-import { useToast } from '@/components/ui/Toast'
-import { useSystemStore } from '@/lib/store'
-
 interface Service {
   id: number
   name: string
@@ -22,14 +16,6 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({ service }: ServiceCardProps) {
-  const [mounted, setMounted] = useState(false)
-  const { ToastContainer } = useToast()
-  const { replaceLocalhostWithIP } = useSystemStore()
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'RUNNING':
@@ -106,21 +92,6 @@ export default function ServiceCard({ service }: ServiceCardProps) {
     }
   }
 
-  // 获取访问URL，只在客户端渲染时替换localhost
-  const getAccessUrl = () => {
-    if (!service.url) return null
-    
-    // 在服务器端渲染时，直接返回原始URL
-    if (!mounted) {
-      return service.url
-    }
-    
-    // 在客户端渲染时，使用全局store的替换函数
-    return replaceLocalhostWithIP(service.url)
-  }
-
-  const accessUrl = getAccessUrl()
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
@@ -128,8 +99,7 @@ export default function ServiceCard({ service }: ServiceCardProps) {
           <div className="flex-shrink-0">
             <span className="text-2xl">{getTypeIcon(service.type)}</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-2 mb-1">
+          <div className="min-w-0 flex-1">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
                 {service.name}
               </h3>
@@ -137,47 +107,64 @@ export default function ServiceCard({ service }: ServiceCardProps) {
                 {getStatusLabel(service.status)}
               </span>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              {getTypeLabel(service.type)}
-            </p>
-            {service.description && (
-              <p className="text-sm text-gray-500 dark:text-gray-500 mb-3">
-                {service.description}
-              </p>
-            )}
-            <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-              {service.port && (
-                <span>端口: {service.port}</span>
-              )}
-              {accessUrl && (
-                <span className="text-blue-600 dark:text-blue-400 font-mono">
-                  {accessUrl}
-                </span>
-              )}
             </div>
           </div>
+
+      <div className="mt-4 space-y-3">
+        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+          <span className="w-16 flex-shrink-0">类型:</span>
+          <span className="text-gray-900 dark:text-white">{getTypeLabel(service.type)}</span>
         </div>
         
-        <div className="flex flex-col space-y-2">
-          {/* 访问服务按钮 */}
-          {accessUrl ? (
+        {service.description && (
+          <div className="flex items-start text-sm text-gray-500 dark:text-gray-400">
+            <span className="w-16 flex-shrink-0">描述:</span>
+            <span className="text-gray-900 dark:text-white">{service.description}</span>
+          </div>
+        )}
+
+        {service.url && (
+          <div className="flex items-start text-sm text-gray-500 dark:text-gray-400">
+            <span className="w-16 flex-shrink-0">地址:</span>
             <a
-              href={accessUrl}
+              href={service.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800 transition-colors"
+              className="text-blue-600 dark:text-blue-400 font-mono hover:underline break-all"
             >
-              访问
+              {service.url}
             </a>
-          ) : (
-            <span className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-gray-500 bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
-              无URL
-            </span>
-          )}
+          </div>
+        )}
+
+        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+          <span className="w-16 flex-shrink-0">检查:</span>
+          <span className="text-gray-900 dark:text-white">
+            {new Date(service.lastChecked).toLocaleString('zh-CN')}
+          </span>
         </div>
       </div>
 
-      <ToastContainer />
+      <div className="mt-4 flex items-center justify-between">
+        {service.url ? (
+          <a
+            href={service.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800 transition-colors"
+            >
+            打开链接
+            </a>
+          ) : (
+            <span className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-gray-500 bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
+            无访问地址
+            </span>
+          )}
+
+        <div className="text-xs text-gray-400 dark:text-gray-500">
+          ID: {service.id}
+        </div>
+      </div>
     </div>
   )
 }

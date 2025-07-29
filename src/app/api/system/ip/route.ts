@@ -1,55 +1,36 @@
 import { NextResponse } from 'next/server'
-import { networkInterfaces } from 'os'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+
+const execAsync = promisify(exec)
 
 export async function GET() {
   try {
-    const nets = networkInterfaces()
-    const results: { [key: string]: string[] } = {}
-
-    for (const name of Object.keys(nets)) {
-      const net = nets[name]
-      if (net) {
-        for (const netInterface of net) {
-          // 跳过内部地址和非IPv4地址
-          if (netInterface.family === 'IPv4' && !netInterface.internal) {
-            if (!results[name]) {
-              results[name] = []
-            }
-            results[name].push(netInterface.address)
-          }
-        }
-      }
-    }
-
-    // 获取主要的外部IP地址
-    let primaryIP = ''
-    const interfaces = ['eth0', 'en0', 'wlan0', 'wlan1', 'eno1', 'ens33']
+    // 尝试多种方式获取本地IP
+    const commands = [
+      "ip route get 1.1.1.1 | awk '{print $7; exit}'",
+      "hostname -I | awk '{print $1}'",
+      "ifconfig | grep 'inet ' | grep -v '127.0.0.1' | head -1 | awk '{print $2}'"
+    ]
     
-    for (const iface of interfaces) {
-      if (results[iface] && results[iface].length > 0) {
-        primaryIP = results[iface][0]
-        break
-      }
-    }
-
-    // 如果没有找到主要接口，使用第一个可用的IP
-    if (!primaryIP) {
-      for (const iface in results) {
-        if (results[iface] && results[iface].length > 0) {
-          primaryIP = results[iface][0]
-          break
+    for (const command of commands) {
+      try {
+        const { stdout } = await execAsync(command)
+        const ip = stdout.trim()
+        if (ip && ip !== '127.0.0.1' && /^\d+\.\d+\.\d+\.\d+$/.test(ip)) {
+          return NextResponse.json({ ip })
+        }
+      } catch (error) {
+        continue
         }
       }
-    }
-
-    return NextResponse.json({
-      ip: primaryIP || '未知',
-      interfaces: results
-    })
+    
+    // 如果所有方法都失败，返回localhost
+    return NextResponse.json({ ip: 'localhost' })
   } catch (error) {
     console.error('获取IP地址失败:', error)
     return NextResponse.json(
-      { ip: '未知', error: '获取IP地址失败' },
+      { ip: 'localhost' },
       { status: 500 }
     )
   }

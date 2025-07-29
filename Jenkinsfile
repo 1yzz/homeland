@@ -51,7 +51,7 @@ pipeline {
                 nvm use ${NODE_VERSION}
                 
                 # 安装依赖
-                npm ci --production=false
+                pnpm ci --production=false
                 echo '依赖安装完成'
                 """
             }
@@ -84,7 +84,7 @@ pipeline {
                 nvm use ${NODE_VERSION}
                 
                 # 构建应用
-                npm run build
+                pnpm run build
                 echo '应用构建完成'
                 """
             }
@@ -99,7 +99,7 @@ pipeline {
                 nvm use ${NODE_VERSION}
                 
                 # 运行代码检查
-                npm run lint
+                pnpm run lint
                 echo '代码检查完成'
                 """
             }
@@ -122,14 +122,14 @@ pipeline {
                 cd ${DEPLOY_PATH}
                 
                 # 安装生产依赖
-                npm ci --only=production
+                pnpm ci --only=production
                 
                 # 生成Prisma客户端
                 npx prisma generate
                 
                 # 使用PM2启动应用
                 pm2 delete ${PM2_APP_NAME} || true
-                pm2 start npm --name "${PM2_APP_NAME}" -- start
+                pm2 start pnpm --name "${PM2_APP_NAME}" -- start
                 pm2 save
                 
                 echo '应用部署完成'
@@ -144,7 +144,7 @@ pipeline {
                 sleep 10
                 
                 # 健康检查
-                curl -f http://localhost:3000/api/system/ip || exit 1
+                curl -f http://localhost:4235 || exit 1
                 echo '健康检查通过'
                 """
             }

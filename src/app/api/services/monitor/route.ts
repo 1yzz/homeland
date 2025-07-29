@@ -53,9 +53,7 @@ export async function GET(request: NextRequest) {
             port: healthCheck.port || undefined,
             command: healthCheck.command || undefined,
             script: healthCheck.script || undefined,
-            headers: healthCheck.headers as Record<string, string> || undefined,
             method: healthCheck.method || undefined,
-            body: healthCheck.body || undefined,
             expectedStatus: healthCheck.expectedStatus || undefined,
             expectedResponse: healthCheck.expectedResponse || undefined
           };
@@ -143,15 +141,15 @@ export async function POST(request: NextRequest) {
       const id = parseInt(serviceId);
       
       switch (action) {
-        case 'auto-detect':
-          // 自动检测服务健康检查配置
-          const { serviceId, serviceType } = body;
-          if (!serviceId || !serviceType) {
-            return NextResponse.json(
-              { error: 'Service ID and type are required' },
-              { status: 400 }
-            );
-          }
+      case 'auto-detect':
+        // 自动检测服务健康检查配置
+        const { serviceId, serviceType } = body;
+        if (!serviceId || !serviceType) {
+          return NextResponse.json(
+            { error: 'Service ID and type are required' },
+            { status: 400 }
+          );
+        }
 
           // 获取服务信息以获取URL和端口
           const serviceInfo = await prisma.service.findUnique({
@@ -165,44 +163,132 @@ export async function POST(request: NextRequest) {
             );
           }
 
-          const detectedConfig = await serviceHealthMonitor.autoDetectHealthCheck(
+        const detectedConfig = await serviceHealthMonitor.autoDetectHealthCheck(
             serviceInfo.name, 
             serviceType as ServiceType,
             serviceInfo.url || undefined
-          );
+        );
 
-          if (detectedConfig) {
-            const config = await prisma.healthCheckConfig.create({
-              data: {
-                serviceId,
-                type: detectedConfig.type!,
-                url: detectedConfig.url,
-                port: detectedConfig.port,
-                command: detectedConfig.command,
-                script: detectedConfig.script,
-                timeout: detectedConfig.timeout || 10000,
-                interval: detectedConfig.interval || 30000,
-                retries: detectedConfig.retries || 3,
-                expectedStatus: detectedConfig.expectedStatus,
-                expectedResponse: detectedConfig.expectedResponse,
-                method: detectedConfig.method,
-                enabled: detectedConfig.enabled || true
-              }
-            });
-            return NextResponse.json(config);
+        if (detectedConfig) {
+          const config = await prisma.healthCheckConfig.create({
+            data: {
+              serviceId,
+              type: detectedConfig.type!,
+              url: detectedConfig.url,
+              port: detectedConfig.port,
+              command: detectedConfig.command,
+              script: detectedConfig.script,
+              timeout: detectedConfig.timeout || 10000,
+              interval: detectedConfig.interval || 30000,
+              retries: detectedConfig.retries || 3,
+              expectedStatus: detectedConfig.expectedStatus,
+              expectedResponse: detectedConfig.expectedResponse,
+              method: detectedConfig.method,
+              enabled: detectedConfig.enabled || true
+            }
+          });
+          return NextResponse.json(config);
+        }
+
+        return NextResponse.json(
+          { error: 'Failed to auto-detect health check configuration' },
+          { status: 400 }
+        );
+
+        case 'create-config':
+          // 创建健康检查配置
+          if (!config) {
+            return NextResponse.json(
+              { error: 'Health check config is required' },
+              { status: 400 }
+            );
           }
 
-          return NextResponse.json(
-            { error: 'Failed to auto-detect health check configuration' },
-            { status: 400 }
-          );
+          const newConfig = await prisma.healthCheckConfig.create({
+            data: {
+              serviceId: id,
+              type: config.type,
+              url: config.url,
+              port: config.port,
+              command: config.command,
+              script: config.script,
+              timeout: config.timeout || 10000,
+              interval: config.interval || 30000,
+              retries: config.retries || 3,
+              expectedStatus: config.expectedStatus,
+              expectedResponse: config.expectedResponse,
+              method: config.method || 'GET',
+              enabled: config.enabled !== false
+            }
+          });
 
-        default:
-          return NextResponse.json(
-            { error: 'Invalid action' },
-            { status: 400 }
-          );
-      }
+          return NextResponse.json(newConfig);
+
+        case 'update-config':
+          // 更新健康检查配置
+          if (!config) {
+            return NextResponse.json(
+              { error: 'Health check config is required' },
+              { status: 400 }
+            );
+          }
+
+          const updatedConfig = await prisma.healthCheckConfig.updateMany({
+            where: { serviceId: id },
+            data: {
+              type: config.type,
+              url: config.url,
+              port: config.port,
+              command: config.command,
+              script: config.script,
+              timeout: config.timeout,
+              interval: config.interval,
+              retries: config.retries,
+              expectedStatus: config.expectedStatus,
+              expectedResponse: config.expectedResponse,
+              method: config.method,
+              enabled: config.enabled
+            }
+          });
+
+          return NextResponse.json({ message: 'Health check config updated', count: updatedConfig.count });
+
+        case 'start-monitoring':
+          // 启动服务监控
+          const startConfig = await prisma.healthCheckConfig.findFirst({
+            where: { serviceId: id, enabled: true }
+          });
+
+          if (!startConfig) {
+            return NextResponse.json(
+              { error: 'No enabled health check config found' },
+              { status: 404 }
+            );
+          }
+
+          serviceHealthMonitor.startMonitoring({
+            ...startConfig,
+            url: startConfig.url || undefined,
+            port: startConfig.port || undefined,
+            command: startConfig.command || undefined,
+            script: startConfig.script || undefined,
+            expectedStatus: startConfig.expectedStatus || undefined,
+            expectedResponse: startConfig.expectedResponse || undefined,
+            method: startConfig.method || undefined
+          });
+          return NextResponse.json({ message: 'Service monitoring started' });
+
+        case 'stop-monitoring':
+          // 停止服务监控
+          serviceHealthMonitor.stopMonitoring(id);
+          return NextResponse.json({ message: 'Service monitoring stopped' });
+
+      default:
+        return NextResponse.json(
+          { error: 'Invalid action' },
+          { status: 400 }
+        );
+    }
     }
 
     return NextResponse.json(

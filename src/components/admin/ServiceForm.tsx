@@ -143,18 +143,6 @@ export default function ServiceForm({ service, onSave, onCancel, loading }: Serv
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // 处理headers字段
-    let parsedHeaders = null;
-    if (formData.healthCheckHeaders && formData.healthCheckHeaders.trim()) {
-      try {
-        parsedHeaders = JSON.parse(formData.healthCheckHeaders);
-      } catch (error) {
-        console.error('Headers格式错误:', error);
-        alert('Headers格式错误，请检查JSON格式');
-        return;
-      }
-    }
-
     const data = {
       name: formData.name,
       type: formData.type,
@@ -173,8 +161,6 @@ export default function ServiceForm({ service, onSave, onCancel, loading }: Serv
         expectedStatus: formData.healthCheckExpectedStatus ? parseInt(formData.healthCheckExpectedStatus) : null,
         expectedResponse: formData.healthCheckExpectedResponse || null,
         method: formData.healthCheckMethod,
-        headers: parsedHeaders,
-        body: formData.healthCheckBody || null,
         enabled: formData.healthCheckEnabled,
       }
     }
@@ -473,36 +459,7 @@ export default function ServiceForm({ service, onSave, onCancel, loading }: Serv
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  HTTP Headers (JSON格式)
-                </label>
-                <textarea
-                  name="healthCheckHeaders"
-                  value={formData.healthCheckHeaders}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder={"{\"Content-Type\": \"application/json\", \"Authorization\": \"Bearer token\"}"}
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  请输入有效的JSON格式，例如: {'{"Content-Type": "application/json"}'}
-                </p>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Request Body
-                </label>
-                <textarea
-                  name="healthCheckBody"
-                  value={formData.healthCheckBody}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="请求体内容 (可选)"
-                />
-              </div>
             </>
           )}
 

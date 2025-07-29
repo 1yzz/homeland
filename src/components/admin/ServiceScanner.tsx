@@ -65,19 +65,37 @@ export default function ServiceScanner({ onServiceSelect }: ServiceScannerProps)
     }
   }
 
-  const handleServiceSelect = (service: ScannedService) => {
-    const formattedService = {
-      name: service.name,
-      type: service.type,
-      url: service.url || '',
-      port: service.port || undefined,
-      description: service.description || '',
-      status: service.status
+  const handleServiceSelect = async (service: ScannedService) => {
+    try {
+      const response = await fetch('/api/admin/services', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: service.name,
+          type: service.type,
+          url: service.url || null,
+          port: service.port || null,
+          description: service.description || '',
+          status: service.status
+        })
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        showToast('success', `服务 "${service.name}" 添加成功`)
+        setShowModal(false)
+        
+        // 通知父组件刷新服务列表
+        onServiceSelect(result.service)
+      } else {
+        const error = await response.json()
+        showToast('error', error.error || '添加服务失败')
+      }
+    } catch (error) {
+      showToast('error', '添加服务时出错，请重试')
     }
-    
-    onServiceSelect(formattedService)
-    setShowModal(false)
-    showToast('success', `已选择服务: ${service.name}`)
   }
 
   const closeModal = () => {
