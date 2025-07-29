@@ -2,8 +2,8 @@ pipeline {
     agent any
     
     environment {
-        // 数据库配置
-        DATABASE_URL = credentials('VaioMysql') + "homeland_sites"
+        // 数据库配置 - 拼接基础URL和数据库名
+        DATABASE_URL = "${credentials('VaioMysql')}homeland_sites"
         
         // 系统配置
         NODE_ENV = 'production'
