@@ -169,11 +169,6 @@ pipeline {
         failure {
             echo '部署失败，请检查日志'
         }
-        cleanup {
-            // 清理工作空间 - 使用node块提供上下文
-            node {
-                cleanWs()
-            }
-        }
+        
     }
 } 
