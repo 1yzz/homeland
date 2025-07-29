@@ -122,7 +122,7 @@ export default function ServiceTable({ services, onEdit, onDelete, loading }: Se
           还没有任何服务
         </p>
         <p className="text-gray-400 dark:text-gray-500 text-sm">
-          点击"添加服务"来创建第一个服务
+          点击&ldquo;添加服务&rdquo;来创建第一个服务
         </p>
       </div>
     )
