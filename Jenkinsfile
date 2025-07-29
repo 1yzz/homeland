@@ -7,7 +7,6 @@ pipeline {
         
         // 系统配置
         NODE_ENV = 'production'
-        NODE_VERSION = 'v16.20.2'
         
         // 部署配置
         DEPLOY_PATH = '/var/www/homeland'
@@ -22,41 +21,21 @@ pipeline {
             }
         }
         
-        stage('Setup Environment') {
+        stage('Verify Environment') {
             steps {
                 sh '''
-                # 设置Node.js环境
-                export PATH=$PATH:/root/.nvm/versions/node/$NODE_VERSION/bin
+                # 验证Docker环境
+                docker --version
+                docker-compose --version
+                echo 'Docker环境验证完成'
                 
-                # 验证环境
-                echo "Node.js版本: $(node --version)"
-                echo "npm版本: $(npm --version)"
-                echo "使用npm作为包管理器"
-                '''
-            }
-        }
-        
-        stage('Build & Test') {
-            steps {
-                sh '''
-                # 设置Node.js环境
-                export PATH=$PATH:/root/.nvm/versions/node/$NODE_VERSION/bin
-                
-                # 安装依赖
-                npm ci
-                echo '依赖安装完成'
-                
-                # 生成Prisma客户端
-                npx prisma generate
-                echo 'Prisma客户端生成完成'
-                
-                # 构建应用
-                npm run build
-                echo '应用构建完成'
-                
-                # 运行代码检查
-                npm run lint
-                echo '代码检查完成'
+                # 验证数据库连接配置
+                if [ -n "$DATABASE_URL" ]; then
+                    echo "✅ 数据库URL已配置: ${DATABASE_URL%/*}/[database]"
+                else
+                    echo "❌ 数据库URL未配置"
+                    exit 1
+                fi
                 '''
             }
         }
@@ -64,27 +43,29 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                # 设置Node.js环境
-                export PATH=$PATH:/root/.nvm/versions/node/$NODE_VERSION/bin
-                
                 # 创建部署目录
                 sudo mkdir -p ''' + DEPLOY_PATH + '''
                 sudo chown $USER:$USER ''' + DEPLOY_PATH + '''
                 
-                # 复制构建文件到部署目录
+                # 复制文件到部署目录
                 cp -r . ''' + DEPLOY_PATH + '''/
                 cd ''' + DEPLOY_PATH + '''
                 
-                # 安装生产依赖
-                npm ci --only=production
+                # 设置执行权限
+                chmod +x docker-deploy.sh
                 
-                # 生成Prisma客户端
-                npx prisma generate
+                # 停止现有容器
+                docker-compose down || true
                 
-                # 使用PM2启动应用
-                pm2 delete ''' + PM2_APP_NAME + ''' || true
-                pm2 start npm --name "''' + PM2_APP_NAME + '''" -- start
-                pm2 save
+                # 构建并启动Docker容器
+                docker-compose build --no-cache
+                docker-compose up -d
+                
+                # 等待容器启动
+                sleep 15
+                
+                # 运行数据库迁移
+                docker-compose exec -T app npx prisma db push || true
                 
                 echo '应用部署完成'
                 '''
