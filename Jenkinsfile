@@ -53,18 +53,27 @@ pipeline {
                 # 设置执行权限
                 chmod +x docker-deploy.sh
                 
-                # 停止现有容器
-                docker compose down || true
+                # 停止并删除现有容器
+                docker stop homeland-app || true
+                docker rm homeland-app || true
                 
-                # 构建并启动Docker容器
-                docker compose build --no-cache
-                docker compose up -d
+                # 构建Docker镜像
+                docker build -t homeland:latest .
+                
+                # 启动容器
+                docker run -d \
+                    --name homeland-app \
+                    -p 4235:4235 \
+                    -e DATABASE_URL="$DATABASE_URL" \
+                    -e NODE_ENV=production \
+                    --restart unless-stopped \
+                    homeland:latest
                 
                 # 等待容器启动
                 sleep 15
                 
                 # 运行数据库迁移
-                docker compose exec -T app npx prisma db push || true
+                docker exec homeland-app npx prisma db push || true
                 
                 echo '应用部署完成'
                 '''
