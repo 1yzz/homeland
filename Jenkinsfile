@@ -26,7 +26,6 @@ pipeline {
                 
                 # 验证Docker环境
                 docker --version
-                docker compose version
                 echo 'Docker环境验证完成'
                 
                 # 验证数据库连接配置
@@ -54,25 +53,42 @@ pipeline {
             }
         }
         
-        stage('Deploy with Docker Compose') {
+        stage('Deploy with Docker') {
             steps {
                 sh '''
                 # 加载环境变量
                 source .env.jenkins
                 
                 # 停止并删除现有容器
-                docker compose down || true
+                docker stop homeland-app 2>/dev/null || true
+                docker rm homeland-app 2>/dev/null || true
                 
-                echo "🔧 使用Docker Compose部署应用..."
+                echo "🔧 使用Docker部署应用..."
                 
-                # 构建并启动服务
-                docker compose up -d --build
+                # 构建镜像
+                docker build \
+                    --build-arg DATABASE_URL="$DATABASE_URL" \
+                    --build-arg NODE_ENV=production \
+                    --build-arg PORT=4235 \
+                    --build-arg HOSTNAME=0.0.0.0 \
+                    -t homeland:latest .
+                
+                # 启动容器
+                docker run -d \
+                    --name homeland-app \
+                    --network host \
+                    --restart unless-stopped \
+                    -e DATABASE_URL="$DATABASE_URL" \
+                    -e NODE_ENV=production \
+                    -e PORT=4235 \
+                    -e HOSTNAME=0.0.0.0 \
+                    homeland:latest
                 
                 # 等待应用启动
                 sleep 15
                 
                 # 运行数据库迁移
-                docker compose exec homeland npx prisma db push || true
+                docker exec homeland-app npx prisma db push || true
                 
                 echo '应用部署完成'
                 '''
@@ -90,7 +106,7 @@ pipeline {
                 echo '健康检查通过'
                 
                 # 显示容器状态
-                docker compose ps
+                docker ps --filter name=homeland-app
                 '''
             }
         }
@@ -119,14 +135,14 @@ pipeline {
             echo '部署成功！'
             sh '''
                 echo "📊 应用地址: http://localhost:4235"
-                echo "🔍 查看日志: docker compose logs -f homeland"
+                echo "🔍 查看日志: docker logs -f homeland-app"
             '''
         }
         failure {
             echo '部署失败，请检查日志'
             sh '''
                 echo "🔍 查看容器日志:"
-                docker compose logs homeland
+                docker logs homeland-app
             '''
         }
     }
