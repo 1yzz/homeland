@@ -13,7 +13,7 @@ COPY package*.json pnpm-lock.yaml* ./
 
 # 安装依赖阶段
 FROM base AS deps
-RUN pnpm ci --frozen-lockfile
+RUN pnpm i --frozen-lockfile
 
 # 构建阶段
 FROM base AS builder
