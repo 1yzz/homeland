@@ -32,10 +32,6 @@ WORKDIR /app
 
 ENV NODE_ENV production
 
-# 创建非root用户
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
 # 复制必要文件
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
@@ -43,9 +39,6 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-
-# 设置权限
-USER nextjs
 
 EXPOSE 4235
 
