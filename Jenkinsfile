@@ -2,11 +2,13 @@ pipeline {
     agent any
     
     environment {
-        // 数据库配置 - 拼接基础URL和数据库名
+        // 数据库配置 - 使用host.docker.internal访问宿主机服务
         DATABASE_URL = "${credentials('VaioMysql')}homeland_sites"
         
         // 系统配置
         NODE_ENV = 'production'
+        PORT = '4235'
+        HOSTNAME = '0.0.0.0'
     }
     
     stages {
@@ -24,11 +26,12 @@ pipeline {
                 
                 # 验证Docker环境
                 docker --version
+                docker compose version
                 echo 'Docker环境验证完成'
                 
                 # 验证数据库连接配置
                 if [ -n "$DATABASE_URL" ]; then
-                    echo "✅ 数据库URL已配置: ${DATABASE_URL%/*}/[database]"
+                    echo "✅ 数据库URL已配置: ${DATABASE_URL}"
                 else
                     echo "❌ 数据库URL未配置"
                     exit 1
@@ -37,30 +40,39 @@ pipeline {
             }
         }
         
-        stage('Deploy') {
+        stage('Prepare Database URL') {
             steps {
                 sh '''
+                # 替换数据库URL中的localhost为host.docker.internal
+                DOCKER_DATABASE_URL=$(echo "$DATABASE_URL" | sed 's/localhost/host.docker.internal/g')
+                
+                echo "🔧 Docker容器内数据库URL: $DOCKER_DATABASE_URL"
+                
+                # 设置环境变量供后续步骤使用
+                echo "DATABASE_URL=$DOCKER_DATABASE_URL" > .env.jenkins
+                '''
+            }
+        }
+        
+        stage('Deploy with Docker Compose') {
+            steps {
+                sh '''
+                # 加载环境变量
+                source .env.jenkins
+                
                 # 停止并删除现有容器
-                docker stop homeland-app || true
-                docker rm homeland-app || true
+                docker compose down || true
                 
-                # 构建Docker镜像
-                docker build -t homeland:latest .
+                echo "🔧 使用Docker Compose部署应用..."
                 
-                # 启动容器
-                docker run -d \
-                    --name homeland-app \
-                    -p 4235:4235 \
-                    -e DATABASE_URL="$DATABASE_URL" \
-                    -e NODE_ENV=production \
-                    --restart unless-stopped \
-                    homeland:latest
+                # 构建并启动服务
+                docker compose up -d --build
                 
-                # 等待容器启动
+                # 等待应用启动
                 sleep 15
                 
                 # 运行数据库迁移
-                docker exec homeland-app npx prisma db push || true
+                docker compose exec homeland npx prisma db push || true
                 
                 echo '应用部署完成'
                 '''
@@ -76,6 +88,9 @@ pipeline {
                 # 健康检查
                 curl -f http://localhost:4235 || exit 1
                 echo '健康检查通过'
+                
+                # 显示容器状态
+                docker compose ps
                 '''
             }
         }
@@ -95,12 +110,24 @@ pipeline {
     post {
         always {
             echo 'Pipeline执行完成'
+            sh '''
+                # 清理临时文件
+                rm -f .env.jenkins
+            '''
         }
         success {
             echo '部署成功！'
+            sh '''
+                echo "📊 应用地址: http://localhost:4235"
+                echo "🔍 查看日志: docker compose logs -f homeland"
+            '''
         }
         failure {
             echo '部署失败，请检查日志'
+            sh '''
+                echo "🔍 查看容器日志:"
+                docker compose logs homeland
+            '''
         }
     }
 } 

@@ -1,5 +1,6 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { PrismaClient } from '@prisma/client';
 
 // 定义服务类型枚举
 export enum ServiceType {
@@ -74,7 +75,7 @@ export class ServiceHealthMonitor {
       case 'HTTP':
         return await this.detectHTTPHealthCheck(serviceName, serviceUrl);
       case 'GRPC':
-        return await this.detectGRPCHealthCheck(serviceName);
+        return await this.detectGRPCHealthCheck();
       case 'SYSTEMD':
         return await this.detectSystemdHealthCheck(serviceName);
       case 'SUPERVISORD':
@@ -112,7 +113,7 @@ export class ServiceHealthMonitor {
           method: 'GET',
           enabled: true
         };
-      } catch (error) {
+      } catch {
         // 如果配置的URL失败，返回配置但标记为可能有问题
             return {
               type: 'HTTP',
@@ -143,7 +144,7 @@ export class ServiceHealthMonitor {
   /**
    * 检测gRPC服务健康检查
    */
-  private async detectGRPCHealthCheck(serviceName: string): Promise<Partial<HealthCheckConfig>> {
+  private async detectGRPCHealthCheck(): Promise<Partial<HealthCheckConfig>> {
     const commonPorts = [50051, 9090, 9091, 9092];
     
     for (const port of commonPorts) {
@@ -161,7 +162,7 @@ export class ServiceHealthMonitor {
             enabled: true
           };
         }
-      } catch (error) {
+      } catch {
         // 继续尝试下一个端口
       }
     }
@@ -308,7 +309,7 @@ export class ServiceHealthMonitor {
           retries: 3,
           enabled: true
         };
-      } catch (error) {
+      } catch {
         // 继续尝试下一个命令
       }
     }
@@ -353,15 +354,16 @@ export class ServiceHealthMonitor {
           responseBody: await response.text().catch(() => 'Unable to read response body')
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         serviceId: config.serviceId,
         status: 'UNHEALTHY',
         responseTime: Date.now() - startTime,
         lastChecked: new Date(),
-        error: error.message,
+        error: errorMessage,
         details: {
-          responseBody: error.message
+          responseBody: errorMessage
         }
       };
     }
@@ -374,8 +376,8 @@ export class ServiceHealthMonitor {
     const startTime = Date.now();
     
     try {
-      const { exec } = require('child_process');
-      const { promisify } = require('util');
+      const { exec } = await import('child_process');
+      const { promisify } = await import('util');
       const execAsync = promisify(exec);
 
       const command = `timeout ${config.timeout / 1000} bash -c "</dev/tcp/localhost/${config.port}"`;
@@ -389,13 +391,14 @@ export class ServiceHealthMonitor {
         responseTime,
         lastChecked: new Date()
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         serviceId: config.serviceId,
         status: 'UNHEALTHY',
         responseTime: Date.now() - startTime,
         lastChecked: new Date(),
-        error: error.message
+        error: errorMessage
       };
     }
   }
@@ -430,13 +433,14 @@ export class ServiceHealthMonitor {
           commandOutput: output
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         serviceId: config.serviceId,
         status: 'UNHEALTHY',
         responseTime: Date.now() - startTime,
         lastChecked: new Date(),
-        error: error.message
+        error: errorMessage
       };
     }
   }
@@ -467,13 +471,14 @@ export class ServiceHealthMonitor {
           commandOutput: output
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return {
         serviceId: config.serviceId,
         status: 'UNHEALTHY',
         responseTime: Date.now() - startTime,
         lastChecked: new Date(),
-        error: error.message
+        error: errorMessage
       };
     }
   }
@@ -667,7 +672,7 @@ export class ServiceHealthMonitor {
   private async triggerPageUpdate() {
     try {
       // 动态导入以避免循环依赖
-      const { broadcastUpdate } = await import('@/app/api/sse/route');
+      const { broadcastUpdate } = await import('@/lib/sse');
       
       // 广播更新通知给前端客户端
       broadcastUpdate({
@@ -719,7 +724,7 @@ export class GlobalHealthMonitor {
   private isRunning: boolean = false;
   private globalTimer: NodeJS.Timeout | null = null;
   private syncTimer: NodeJS.Timeout | null = null;
-  private prisma: any;
+  private prisma!: PrismaClient;
 
   private constructor() {}
 
@@ -800,6 +805,7 @@ export class GlobalHealthMonitor {
       await this.cleanupOldResults();
 
       // 并行执行所有健康检查
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const healthPromises = healthConfigs.map(async (config: any) => {
         try {
           const result = await serviceHealthMonitor.performHealthCheck(config);

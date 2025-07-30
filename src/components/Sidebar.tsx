@@ -24,7 +24,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         } else {
           setLocalIP('获取失败')
         }
-      } catch (error) {
+      } catch {
         setLocalIP('获取失败')
       }
     }

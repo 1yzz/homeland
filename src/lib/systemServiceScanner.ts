@@ -230,26 +230,17 @@ async function getServicePort(serviceName: string, serviceType: string): Promise
             }
           }
         }
-      } catch (error) {
+      } catch {
         // 继续尝试下一个命令
       }
     }
-  } catch (error) {
+  } catch {
     // 端口查找失败不影响服务发现
   }
   
   return undefined
 }
 
-// 检查 systemd 服务是否启用自动启动
-async function isServiceEnabled(serviceName: string): Promise<boolean> {
-  try {
-    const { stdout } = await execAsync(`systemctl is-enabled ${serviceName}`)
-    return stdout.trim() === 'enabled'
-  } catch (error) {
-    return false
-  }
-}
 
 // 解析 Docker 端口映射
 function parseDockerPorts(portsInfo: string): number[] {

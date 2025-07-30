@@ -20,7 +20,7 @@ export async function GET() {
         if (ip && ip !== '127.0.0.1' && /^\d+\.\d+\.\d+\.\d+$/.test(ip)) {
           return NextResponse.json({ ip })
         }
-      } catch (error) {
+      } catch {
         continue
         }
       }

@@ -36,7 +36,7 @@ export async function scanRunningServices(): Promise<Service[]> {
             })
           }
         }
-      } catch (error) {
+      } catch {
         // Port not in use, continue
       }
     }
@@ -46,12 +46,12 @@ export async function scanRunningServices(): Promise<Service[]> {
       const { stdout } = await execAsync('docker ps --format "table {{.Names}}\\t{{.Ports}}" 2>/dev/null')
       const dockerServices = parseDockerOutput(stdout)
       services.push(...dockerServices)
-    } catch (error) {
+    } catch {
       // Docker not available or no containers
     }
 
-  } catch (error) {
-    console.error('Error scanning services:', error)
+  } catch {
+    console.error('Error scanning services')
   }
 
   return services
@@ -77,7 +77,7 @@ async function detectServiceType(port: number): Promise<string | null> {
     } else {
       return 'web-service'
     }
-  } catch (error) {
+  } catch {
     // Not a web service or not accessible
     return null
   }
@@ -95,7 +95,7 @@ function parseDockerOutput(output: string): Service[] {
       const portMatches = ports.match(/(\d+)->(\d+)/g)
       if (portMatches) {
         for (const match of portMatches) {
-          const [hostPort, containerPort] = match.split('->')
+          const [hostPort] = match.split('->')
           const port = parseInt(hostPort)
           
           services.push({

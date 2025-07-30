@@ -3,6 +3,10 @@ import HomeServiceMonitor from '@/components/HomeServiceMonitor'
 import ClientSSEHandler from '@/components/ClientSSEHandler'
 import { globalHealthMonitor } from '@/lib/serviceHealthMonitor'
 
+// 禁用静态生成，使用动态渲染
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 async function getMonitoringStatus() {
   try {
     const isMonitoring = globalHealthMonitor.isMonitoring()
@@ -73,19 +77,8 @@ export default async function HomePage() {
     error: statsMap['ERROR'] || 0
   }
 
-  // 将服务数据转换为前端需要的格式
-  const services = allServices.map(service => ({
-    id: service.id,
-    name: service.name,
-    type: service.type as 'HTTP' | 'GRPC' | 'SYSTEMD' | 'SUPERVISORD' | 'DOCKER' | 'DATABASE' | 'CACHE' | 'CUSTOM',
-    url: service.url || undefined,
-    port: service.port !== null ? service.port : undefined,
-    status: service.status as 'RUNNING' | 'STOPPED' | 'ERROR' | 'STARTING' | 'STOPPING',
-    description: service.description || undefined,
-    lastChecked: service.lastChecked?.toISOString() || new Date().toISOString(),
-    createdAt: service.createdAt.toISOString(),
-    updatedAt: service.updatedAt.toISOString()
-  }))
+  // 直接使用服务数据，无需转换
+  const services = allServices
 
   return (
     <>

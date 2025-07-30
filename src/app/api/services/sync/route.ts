@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { serviceHealthMonitor } from '@/lib/serviceHealthMonitor';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     console.log('Starting health check results sync...');
     
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 获取当前内存中的所有结果
     const results = serviceHealthMonitor.getAllHealthResults();

@@ -121,11 +121,11 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(service, { status: 201 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('创建服务失败:', error)
     
     // 处理特定的业务错误
-    if (error.message === '服务名称已存在') {
+    if (error instanceof Error && error.message === '服务名称已存在') {
       return NextResponse.json({ error: '服务名称已存在' }, { status: 409 })
     }
     

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import ServiceForm from './ServiceForm'
 import ServiceTable from './ServiceTable'
 import { useToast } from '@/components/ui/Toast'
@@ -10,18 +10,48 @@ interface Service {
   id: number
   name: string
   type: 'HTTP' | 'GRPC' | 'SYSTEMD' | 'SUPERVISORD' | 'DOCKER' | 'DATABASE' | 'CACHE' | 'CUSTOM'
-  url?: string
-  port?: number
+  url: string | null
+  port: number | null
   status: 'RUNNING' | 'STOPPED' | 'ERROR' | 'STARTING' | 'STOPPING'
-  description?: string
-  lastChecked: string
-  createdAt: string
-  updatedAt: string
+  description: string | null
+  lastChecked: Date
+  createdAt: Date
+  updatedAt: Date
 }
 
-export default function ServiceManager() {
-  const [services, setServices] = useState<Service[]>([])
-  const [loading, setLoading] = useState(true)
+interface ServiceStats {
+  total: number
+  running: number
+  stopped: number
+  error: number
+}
+
+interface ServiceManagerProps {
+  initialServices?: Service[]
+  initialStats?: ServiceStats
+}
+
+interface ServiceFormData {
+  name: string
+  type: string
+  url: string
+  description: string
+  healthCheckType: string
+  healthCheckUrl: string
+  healthCheckCommand: string
+  healthCheckScript: string
+  healthCheckTimeout: string
+  healthCheckInterval: string
+  healthCheckRetries: string
+  healthCheckExpectedStatus: string
+  healthCheckExpectedResponse: string
+  healthCheckMethod: string
+  healthCheckEnabled: boolean
+}
+
+export default function ServiceManager({ initialServices = [] }: ServiceManagerProps) {
+  const [services, setServices] = useState<Service[]>(initialServices)
+  const [loading, setLoading] = useState(initialServices.length === 0)
   const [showForm, setShowForm] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -29,7 +59,7 @@ export default function ServiceManager() {
   const { showToast, ToastContainer } = useToast()
   const { showConfirm, ConfirmDialogComponent } = useConfirmDialog()
 
-  const refreshServices = async () => {
+  const refreshServices = useCallback(async () => {
     try {
       setRefreshing(true)
       const response = await fetch('/api/admin/services')
@@ -39,19 +69,21 @@ export default function ServiceManager() {
       } else {
         showToast('error', '获取服务列表失败')
       }
-    } catch (error) {
+    } catch {
       showToast('error', '获取服务列表失败')
     } finally {
       setRefreshing(false)
       setLoading(false)
     }
-  }
+  }, [showToast])
 
   useEffect(() => {
-    refreshServices()
-  }, [])
+    if (initialServices.length === 0) {
+      refreshServices()
+    }
+  }, [refreshServices, initialServices.length])
 
-  const handleSave = async (serviceData: any) => {
+  const handleSave = async (serviceData: ServiceFormData) => {
     try {
       const url = editingService ? `/api/admin/services/${editingService.id}` : '/api/admin/services'
       const method = editingService ? 'PUT' : 'POST'
@@ -70,10 +102,10 @@ export default function ServiceManager() {
         setEditingService(null)
         refreshServices()
       } else {
-        const error = await response.json()
-        showToast('error', `保存失败: ${error.error}`)
+        const errorData = await response.json()
+        showToast('error', `保存失败: ${errorData.error}`)
       }
-    } catch (error) {
+    } catch {
       showToast('error', '保存失败，请重试')
     }
   }
@@ -95,10 +127,10 @@ export default function ServiceManager() {
             showToast('success', '服务删除成功')
             refreshServices()
           } else {
-            const error = await response.json()
-            showToast('error', `删除失败: ${error.error}`)
+            const errorData = await response.json()
+            showToast('error', `删除失败: ${errorData.error}`)
           }
-        } catch (error) {
+        } catch {
           showToast('error', '删除失败，请重试')
         }
       }

@@ -7,19 +7,46 @@ interface Service {
   id: number
   name: string
   type: 'HTTP' | 'GRPC' | 'SYSTEMD' | 'SUPERVISORD' | 'DOCKER' | 'DATABASE' | 'CACHE' | 'CUSTOM'
-  url?: string
+  url: string | null
+  port: number | null
   status: 'RUNNING' | 'STOPPED' | 'ERROR' | 'STARTING' | 'STOPPING'
-  description?: string
-  lastChecked: string
-  createdAt: string
-  updatedAt: string
+  description: string | null
+  lastChecked: Date
+  createdAt: Date
+  updatedAt: Date
 }
 
 interface ServiceFormProps {
   service?: Service | null
-  onSave: (data: any) => void
+  onSave: (data: ServiceFormData) => void
   onCancel: () => void
   loading: boolean
+}
+
+interface ServiceFormData {
+  name: string
+  type: string
+  url: string
+  description: string
+  healthCheckType: string
+  healthCheckUrl: string
+  healthCheckCommand: string
+  healthCheckScript: string
+  healthCheckTimeout: string
+  healthCheckInterval: string
+  healthCheckRetries: string
+  healthCheckExpectedStatus: string
+  healthCheckExpectedResponse: string
+  healthCheckMethod: string
+  healthCheckEnabled: boolean
+}
+
+interface ScannedService {
+  name: string
+  type: string
+  url?: string
+  port?: number
+  description?: string
 }
 
 const SERVICE_TYPES = [
@@ -143,26 +170,22 @@ export default function ServiceForm({ service, onSave, onCancel, loading }: Serv
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    const data = {
+    const data: ServiceFormData = {
       name: formData.name,
       type: formData.type,
-      url: formData.url || null,
-      description: formData.description || null,
-      status: 'STOPPED',
-      // 健康检查配置
-      healthCheck: {
-        type: formData.healthCheckType,
-        url: formData.healthCheckUrl || null,
-        command: formData.healthCheckCommand || null,
-        script: formData.healthCheckScript || null,
-        timeout: parseInt(formData.healthCheckTimeout),
-        interval: parseInt(formData.healthCheckInterval),
-        retries: parseInt(formData.healthCheckRetries),
-        expectedStatus: formData.healthCheckExpectedStatus ? parseInt(formData.healthCheckExpectedStatus) : null,
-        expectedResponse: formData.healthCheckExpectedResponse || null,
-        method: formData.healthCheckMethod,
-        enabled: formData.healthCheckEnabled,
-      }
+      url: formData.url,
+      description: formData.description,
+      healthCheckType: formData.healthCheckType,
+      healthCheckUrl: formData.healthCheckUrl,
+      healthCheckCommand: formData.healthCheckCommand,
+      healthCheckScript: formData.healthCheckScript,
+      healthCheckTimeout: formData.healthCheckTimeout,
+      healthCheckInterval: formData.healthCheckInterval,
+      healthCheckRetries: formData.healthCheckRetries,
+      healthCheckExpectedStatus: formData.healthCheckExpectedStatus,
+      healthCheckExpectedResponse: formData.healthCheckExpectedResponse,
+      healthCheckMethod: formData.healthCheckMethod,
+      healthCheckEnabled: formData.healthCheckEnabled,
     }
 
     onSave(data)
@@ -177,7 +200,7 @@ export default function ServiceForm({ service, onSave, onCancel, loading }: Serv
   }
 
   // 处理扫描服务选择
-  const handleServiceSelect = (scannedService: any) => {
+  const handleServiceSelect = (scannedService: ScannedService) => {
     setFormData(prev => ({
       ...prev,
       name: scannedService.name,

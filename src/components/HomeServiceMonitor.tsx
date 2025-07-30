@@ -5,13 +5,13 @@ interface Service {
   id: number;
   name: string;
   type: 'HTTP' | 'GRPC' | 'SYSTEMD' | 'SUPERVISORD' | 'DOCKER' | 'DATABASE' | 'CACHE' | 'CUSTOM';
-  url?: string;
-  port?: number;
+  url: string | null;
+  port: number | null;
   status: 'RUNNING' | 'STOPPED' | 'ERROR' | 'STARTING' | 'STOPPING';
-  description?: string;
-  lastChecked: string;
-  createdAt: string;
-  updatedAt: string;
+  description: string | null;
+  lastChecked: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 

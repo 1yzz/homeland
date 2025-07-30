@@ -58,7 +58,7 @@ export default function ServiceScanner({ onServiceSelect }: ServiceScannerProps)
       } else {
         showToast('error', '扫描失败，请重试')
       }
-    } catch (error) {
+    } catch {
       showToast('error', '扫描过程中出错，请重试')
     } finally {
       setIsScanning(false)
@@ -90,10 +90,10 @@ export default function ServiceScanner({ onServiceSelect }: ServiceScannerProps)
         // 通知父组件刷新服务列表
         onServiceSelect(result.service)
       } else {
-        const error = await response.json()
-        showToast('error', error.error || '添加服务失败')
+        const errorData = await response.json()
+        showToast('error', errorData.error || '添加服务失败')
       }
-    } catch (error) {
+    } catch {
       showToast('error', '添加服务时出错，请重试')
     }
   }
