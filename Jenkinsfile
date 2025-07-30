@@ -39,25 +39,12 @@ pipeline {
             }
         }
         
-        stage('Prepare Database URL') {
+        stage('Deploy with Docker') {
             steps {
                 sh '''
                 # 替换数据库URL中的localhost为host.docker.internal
                 DOCKER_DATABASE_URL=$(echo "$DATABASE_URL" | sed 's/localhost/host.docker.internal/g')
-                
                 echo "🔧 Docker容器内数据库URL: $DOCKER_DATABASE_URL"
-                
-                # 设置环境变量供后续步骤使用
-                echo "DATABASE_URL=$DOCKER_DATABASE_URL" > ${WORKSPACE}/.env.jenkins
-                '''
-            }
-        }
-        
-        stage('Deploy with Docker') {
-            steps {
-                sh '''
-                # 加载环境变量
-                source ${WORKSPACE}/.env.jenkins
                 
                 # 停止并删除现有容器
                 docker stop homeland-app 2>/dev/null || true
@@ -67,7 +54,7 @@ pipeline {
                 
                 # 构建镜像
                 docker build \
-                    --build-arg DATABASE_URL="$DATABASE_URL" \
+                    --build-arg DATABASE_URL="$DOCKER_DATABASE_URL" \
                     --build-arg NODE_ENV=production \
                     --build-arg PORT=4235 \
                     --build-arg HOSTNAME=0.0.0.0 \
@@ -78,7 +65,7 @@ pipeline {
                     --name homeland-app \
                     --network host \
                     --restart unless-stopped \
-                    -e DATABASE_URL="$DATABASE_URL" \
+                    -e DATABASE_URL="$DOCKER_DATABASE_URL" \
                     -e NODE_ENV=production \
                     -e PORT=4235 \
                     -e HOSTNAME=0.0.0.0 \
@@ -127,8 +114,8 @@ pipeline {
         always {
             echo 'Pipeline执行完成'
             sh '''
-                # 清理临时文件
-                rm -f ${WORKSPACE}/.env.jenkins
+                # 清理完成
+                echo "清理完成"
             '''
         }
         success {
