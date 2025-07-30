@@ -48,7 +48,7 @@ pipeline {
                 echo "🔧 Docker容器内数据库URL: $DOCKER_DATABASE_URL"
                 
                 # 设置环境变量供后续步骤使用
-                echo "DATABASE_URL=$DOCKER_DATABASE_URL" > .env.jenkins
+                echo "DATABASE_URL=$DOCKER_DATABASE_URL" > ${WORKSPACE}/.env.jenkins
                 '''
             }
         }
@@ -57,7 +57,7 @@ pipeline {
             steps {
                 sh '''
                 # 加载环境变量
-                source .env.jenkins
+                source ${WORKSPACE}/.env.jenkins
                 
                 # 停止并删除现有容器
                 docker stop homeland-app 2>/dev/null || true
@@ -128,7 +128,7 @@ pipeline {
             echo 'Pipeline执行完成'
             sh '''
                 # 清理临时文件
-                rm -f .env.jenkins
+                rm -f ${WORKSPACE}/.env.jenkins
             '''
         }
         success {
