@@ -3,12 +3,15 @@ pipeline {
     
     environment {
         // Docker构建配置
-        DOCKER_BUILDKIT=1
+        DOCKER_BUILDKIT = '1'
         
-        // 系统配置
+        // 应用配置
         NODE_ENV = 'production'
-        PORT = '4235'
-        HOSTNAME = '0.0.0.0'
+        APP_PORT = '4235'
+        APP_HOSTNAME = '0.0.0.0'
+        
+        // 数据库配置
+        DB_NAME = 'homeland_sites'
     }
     
     stages {
@@ -39,9 +42,14 @@ pipeline {
                 withCredentials([string(credentialsId: 'VaioMysql', variable: 'MYSQL_URL')]) {
                     sh '''
                     # 构建完整的数据库URL（使用--network host模式，直接使用原始URL）
-                    export DATABASE_URL="${MYSQL_URL}/homeland_sites"
-                    export DOCKER_DATABASE_URL="$DATABASE_URL"
-                    echo "🔧 Docker容器内数据库URL: $DOCKER_DATABASE_URL"
+                    export DATABASE_URL="${MYSQL_URL}/${DB_NAME}"
+                    echo "🔧 Docker容器内数据库URL: $DATABASE_URL"
+                    
+                    # 验证环境变量
+                    echo "📋 环境变量检查:"
+                    echo "  NODE_ENV: $NODE_ENV"
+                    echo "  APP_PORT: $APP_PORT"
+                    echo "  DB_NAME: $DB_NAME"
                 
                 # 停止并删除现有容器
                 docker stop homeland-app 2>/dev/null || true
@@ -51,10 +59,10 @@ pipeline {
                 
                 # 构建镜像
                 docker build \
-                    --build-arg DATABASE_URL="$DOCKER_DATABASE_URL" \
-                    --build-arg NODE_ENV=production \
-                    --build-arg PORT=4235 \
-                    --build-arg HOSTNAME=0.0.0.0 \
+                    --build-arg DATABASE_URL="$DATABASE_URL" \
+                    --build-arg NODE_ENV="$NODE_ENV" \
+                    --build-arg PORT="$APP_PORT" \
+                    --build-arg HOSTNAME="$APP_HOSTNAME" \
                     -t homeland:latest .
                 
                 # 启动容器
@@ -62,10 +70,10 @@ pipeline {
                     --name homeland-app \
                     --network host \
                     --restart unless-stopped \
-                    -e DATABASE_URL="$DOCKER_DATABASE_URL" \
-                    -e NODE_ENV=production \
-                    -e PORT=4235 \
-                    -e HOSTNAME=0.0.0.0 \
+                    -e DATABASE_URL="$DATABASE_URL" \
+                    -e NODE_ENV="$NODE_ENV" \
+                    -e PORT="$APP_PORT" \
+                    -e HOSTNAME="$APP_HOSTNAME" \
                     homeland:latest
                 
                 # 验证环境变量和网络连通性
