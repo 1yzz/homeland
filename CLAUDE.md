@@ -73,3 +73,25 @@ The `Service` model replaced the original `Website` model and includes:
 - **Next.js 15**: App Router with server components
 - **Tailwind CSS**: Styling with dark mode support
 - **TypeScript**: Full type safety
+
+## Issues and Troubleshooting
+
+### Database Connection Errors
+
+- **Error**: Can't reach database server at `localhost:3306`
+  - Possible reasons:
+    - MySQL service not running
+    - Incorrect database configuration
+    - Network/port issues preventing connection
+  - Troubleshooting steps:
+    - Verify MySQL service is started: `sudo systemctl status mysql`
+    - Check database credentials in `.env` file
+    - Ensure `localhost:3306` is accessible
+    - Restart MySQL service if needed
+
+### Build and Deployment Issues
+
+- Docker构建过程出错，可能是网络模式问题
+  - 错误信息显示无法连接数据库服务器 `localhost:3306`
+  - 问题可能与容器网络配置相关，特别是数据库服务器连接
+  - 建议检查Docker网络设置，确保容器可以正确访问本地MySQL服务器

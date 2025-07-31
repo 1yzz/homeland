@@ -19,12 +19,12 @@ RUN pnpm i --frozen-lockfile
 # 构建阶段
 FROM base AS builder
 # 定义构建时参数
-ARG DATABASE_URL
+ARG DATABASE_URL="mysql://user:pass@localhost:3306/temp_db"
 ARG NODE_ENV=production
 ARG PORT=4235
 ARG HOSTNAME=0.0.0.0
 
-# 设置环境变量
+# 设置环境变量（构建时使用临时数据库URL）
 ENV DATABASE_URL=$DATABASE_URL
 ENV NODE_ENV=$NODE_ENV
 ENV PORT=$PORT
