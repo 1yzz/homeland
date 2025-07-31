@@ -38,10 +38,9 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'VaioMysql', variable: 'MYSQL_URL')]) {
                     sh '''
-                    # 构建完整的数据库URL
+                    # 构建完整的数据库URL（使用--network host模式，直接使用原始URL）
                     export DATABASE_URL="${MYSQL_URL}/homeland_sites"
-                    # 替换数据库URL中的localhost为host.docker.internal
-                    export DOCKER_DATABASE_URL=$(echo "$DATABASE_URL" | sed 's/localhost/host.docker.internal/g')
+                    export DOCKER_DATABASE_URL="$DATABASE_URL"
                     echo "🔧 Docker容器内数据库URL: $DOCKER_DATABASE_URL"
                 
                 # 停止并删除现有容器
@@ -69,9 +68,11 @@ pipeline {
                     -e HOSTNAME=0.0.0.0 \
                     homeland:latest
                 
-                # 验证环境变量传递
+                # 验证环境变量和网络连通性
                 echo "🔍 验证容器环境变量:"
                 docker exec homeland-app env | grep DATABASE_URL
+                echo "🔍 测试数据库连通性:"
+                docker exec homeland-app sh -c 'nc -zv localhost 3306 || echo "数据库连接测试失败"'
                 
                 # 等待应用启动
                 sleep 15
