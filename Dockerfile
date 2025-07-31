@@ -62,8 +62,11 @@ COPY --from=builder /app/prisma ./prisma
 # 创建必要目录并复制文件
 RUN mkdir -p ./public
 
-# 复制Prisma客户端（从node_modules中）
-COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma ./node_modules/@prisma
+# 创建node_modules目录结构
+RUN mkdir -p ./node_modules/@prisma ./node_modules/prisma
+
+# 复制Prisma客户端
+COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client ./node_modules/@prisma/client
 COPY --from=builder /app/node_modules/.pnpm/prisma*/node_modules/prisma ./node_modules/prisma
 
 # 确保用户权限
