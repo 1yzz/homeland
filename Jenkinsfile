@@ -63,6 +63,7 @@ pipeline {
                     --build-arg NODE_ENV="$NODE_ENV" \
                     --build-arg PORT="$APP_PORT" \
                     --build-arg HOSTNAME="$APP_HOSTNAME" \
+                    --network host \
                     -t homeland:latest .
                 
                 # 启动容器

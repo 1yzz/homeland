@@ -19,7 +19,7 @@ RUN pnpm i --frozen-lockfile
 # 构建阶段
 FROM base AS builder
 # 定义构建时参数
-ARG DATABASE_URL="mysql://user:pass@localhost:3306/temp_db"
+ARG DATABASE_URL
 ARG NODE_ENV=production
 ARG PORT=4235
 ARG HOSTNAME=0.0.0.0
@@ -66,9 +66,12 @@ RUN mkdir -p ./public
 # 创建node_modules目录结构
 RUN mkdir -p ./node_modules/@prisma ./node_modules/prisma
 
-# 复制Prisma客户端
+# 复制Prisma客户端和CLI
 COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client ./node_modules/@prisma/client
 COPY --from=builder /app/node_modules/.pnpm/prisma*/node_modules/prisma ./node_modules/prisma
+
+# 创建符号链接使prisma命令可用
+RUN ln -sf /app/node_modules/prisma/build/index.js /usr/local/bin/prisma && chmod +x /usr/local/bin/prisma
 
 # 确保用户权限
 RUN addgroup --system --gid 1001 nodejs && \
