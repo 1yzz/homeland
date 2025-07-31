@@ -19,7 +19,7 @@ RUN pnpm i --frozen-lockfile
 # 构建阶段
 FROM base AS builder
 # 定义构建时参数
-ARG DATABASE_URL="mysql://build:build@localhost:3306/build"
+ARG DATABASE_URL
 ARG NODE_ENV=production
 ARG PORT=4235
 ARG HOSTNAME=0.0.0.0
