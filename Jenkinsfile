@@ -83,10 +83,6 @@ pipeline {
                 echo "🔍 测试数据库连通性:"
                 docker exec homeland-app sh -c 'nc -zv localhost 3306 || echo "数据库连接测试失败"'
                 
-                # 运行数据库迁移（在主机上执行）
-                export DATABASE_URL="${MYSQL_URL}/${DB_NAME}"
-                npx prisma db push || true
-                
                 # 等待应用启动
                 sleep 15
                 

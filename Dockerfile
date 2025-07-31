@@ -39,6 +39,9 @@ RUN pnpm prisma generate
 # 构建应用
 RUN pnpm run build
 
+# 运行数据库迁移（在构建完成后）
+RUN pnpm prisma db push || echo "数据库迁移失败，继续构建..."
+
 # 生产运行阶段
 FROM base AS runner
 WORKDIR /app
