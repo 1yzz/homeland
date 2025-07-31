@@ -59,15 +59,15 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 
-# 创建public目录（如果存在内容则复制）
-RUN mkdir -p ./public
-COPY --from=builder /app/public ./public 2>/dev/null || true
+# 复制必要文件（使用RUN + cp处理可选文件）
+RUN mkdir -p ./public ./node_modules/@prisma ./node_modules/prisma
 
-# 复制Prisma客户端 - 更健壮的方式
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma 2>/dev/null || \
-COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client ./node_modules/@prisma/client 2>/dev/null || true
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma 2>/dev/null || \
-COPY --from=builder /app/node_modules/.pnpm/prisma*/node_modules/prisma ./node_modules/prisma 2>/dev/null || true
+# 复制public目录（如果存在）
+COPY --from=builder /app/public ./public
+
+# 复制Prisma客户端
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 
 # 确保用户权限
 RUN addgroup --system --gid 1001 nodejs && \
