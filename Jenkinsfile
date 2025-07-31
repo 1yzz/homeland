@@ -57,9 +57,9 @@ pipeline {
                 
                 echo "🔧 使用Docker部署应用..."
                 
-                # 构建镜像
+                # 构建镜像（使用临时DATABASE_URL用于prisma generate）
                 docker build \
-                    --build-arg DATABASE_URL="$DATABASE_URL" \
+                    --build-arg DATABASE_URL="mysql://build:build@localhost:3306/build" \
                     --build-arg NODE_ENV="$NODE_ENV" \
                     --build-arg PORT="$APP_PORT" \
                     --build-arg HOSTNAME="$APP_HOSTNAME" \
