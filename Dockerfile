@@ -13,9 +13,8 @@ COPY package*.json pnpm-lock.yaml* ./
 
 # 安装依赖阶段
 FROM base AS deps
-# 使用BuildKit cache mount for pnpm store
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm i --frozen-lockfile
+# Jenkins环境下不使用cache mount
+RUN pnpm i --frozen-lockfile
 
 # 构建阶段
 FROM base AS builder
@@ -56,14 +55,26 @@ ENV PORT=$PORT
 ENV HOSTNAME=$HOSTNAME
 
 # 复制必要文件
-COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 
-# 复制pnpm的Prisma客户端（路径与npm不同）
-COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client ./node_modules/@prisma/client
-COPY --from=builder /app/node_modules/.pnpm/prisma*/node_modules/prisma ./node_modules/prisma
+# 创建public目录（如果存在内容则复制）
+RUN mkdir -p ./public
+COPY --from=builder /app/public ./public 2>/dev/null || true
+
+# 复制Prisma客户端 - 更健壮的方式
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma 2>/dev/null || \
+COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client ./node_modules/@prisma/client 2>/dev/null || true
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma 2>/dev/null || \
+COPY --from=builder /app/node_modules/.pnpm/prisma*/node_modules/prisma ./node_modules/prisma 2>/dev/null || true
+
+# 确保用户权限
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs && \
+    chown -R nextjs:nodejs /app
+
+USER nextjs
 
 EXPOSE 4235
 
