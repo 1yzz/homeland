@@ -39,9 +39,9 @@ pipeline {
                 withCredentials([string(credentialsId: 'VAIO_MYSQL_URL', variable: 'MYSQL_URL')]) {
                     sh '''
                     # 构建完整的数据库URL
-                    DATABASE_URL="${MYSQL_URL}/homeland_sites"
+                    export DATABASE_URL="${MYSQL_URL}/homeland_sites"
                     # 替换数据库URL中的localhost为host.docker.internal
-                    DOCKER_DATABASE_URL=$(echo "$DATABASE_URL" | sed 's/localhost/host.docker.internal/g')
+                    export DOCKER_DATABASE_URL=$(echo "$DATABASE_URL" | sed 's/localhost/host.docker.internal/g')
                     echo "🔧 Docker容器内数据库URL: $DOCKER_DATABASE_URL"
                 
                 # 停止并删除现有容器
@@ -68,6 +68,10 @@ pipeline {
                     -e PORT=4235 \
                     -e HOSTNAME=0.0.0.0 \
                     homeland:latest
+                
+                # 验证环境变量传递
+                echo "🔍 验证容器环境变量:"
+                docker exec homeland-app env | grep DATABASE_URL
                 
                 # 等待应用启动
                 sleep 15
