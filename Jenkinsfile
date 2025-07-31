@@ -36,7 +36,7 @@ pipeline {
         
         stage('Deploy with Docker') {
             steps {
-                withCredentials([string(credentialsId: 'VaioMysql', variable: 'MYSQL_URL')]) {
+                withCredentials([string(credentialsId: 'vaiomysql', variable: 'MYSQL_URL')]) {
                     sh '''
                     # 构建完整的数据库URL
                     export DATABASE_URL="${MYSQL_URL}/homeland_sites"
