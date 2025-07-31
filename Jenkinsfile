@@ -2,10 +2,10 @@ pipeline {
     agent any
     
     environment {
-        // 数据库配置 - 使用host.docker.internal访问宿主机服务
-        DATABASE_URL = "${VAIO_MYSQL_URL}/homeland_sites"
+        // 数据库配置 - 使用Jenkins凭据
+        DATABASE_URL = "${credentials('VAIO_MYSQL_URL')}/homeland_sites"
         DOCKER_BUILDKIT=1
-            
+    
         // 系统配置
         NODE_ENV = 'production'
         PORT = '4235'
@@ -59,7 +59,6 @@ pipeline {
                     --build-arg NODE_ENV=production \
                     --build-arg PORT=4235 \
                     --build-arg HOSTNAME=0.0.0.0 \
-
                     -t homeland:latest .
                 
                 # 启动容器
