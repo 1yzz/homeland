@@ -2,10 +2,9 @@ pipeline {
     agent any
     
     environment {
-        // 数据库配置 - 使用Jenkins凭据
-        DATABASE_URL = "${credentials('VAIO_MYSQL_URL')}/homeland_sites"
+        // Docker构建配置
         DOCKER_BUILDKIT=1
-    
+        
         // 系统配置
         NODE_ENV = 'production'
         PORT = '4235'
@@ -29,23 +28,21 @@ pipeline {
                 docker --version
                 echo 'Docker环境验证完成'
                 
-                # 验证数据库连接配置
-                if [ -n "$DATABASE_URL" ]; then
-                    echo "✅ 数据库URL已配置: ${DATABASE_URL}"
-                else
-                    echo "❌ 数据库URL未配置"
-                    exit 1
-                fi
+                # 获取数据库凭据
+                echo "✅ 准备获取数据库凭据"
                 '''
             }
         }
         
         stage('Deploy with Docker') {
             steps {
-                sh '''
-                # 替换数据库URL中的localhost为host.docker.internal
-                DOCKER_DATABASE_URL=$(echo "$DATABASE_URL" | sed 's/localhost/host.docker.internal/g')
-                echo "🔧 Docker容器内数据库URL: $DOCKER_DATABASE_URL"
+                withCredentials([string(credentialsId: 'VAIO_MYSQL_URL', variable: 'MYSQL_URL')]) {
+                    sh '''
+                    # 构建完整的数据库URL
+                    DATABASE_URL="${MYSQL_URL}/homeland_sites"
+                    # 替换数据库URL中的localhost为host.docker.internal
+                    DOCKER_DATABASE_URL=$(echo "$DATABASE_URL" | sed 's/localhost/host.docker.internal/g')
+                    echo "🔧 Docker容器内数据库URL: $DOCKER_DATABASE_URL"
                 
                 # 停止并删除现有容器
                 docker stop homeland-app 2>/dev/null || true
@@ -79,7 +76,8 @@ pipeline {
                 docker exec homeland-app npx prisma db push || true
                 
                 echo '应用部署完成'
-                '''
+                    '''
+                }
             }
         }
         
