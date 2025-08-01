@@ -81,7 +81,7 @@ export default function ServiceManager({ initialServices = [] }: ServiceManagerP
     if (initialServices.length === 0) {
       refreshServices()
     }
-  }, [refreshServices, initialServices.length])
+  }, [initialServices.length])
 
   const handleSave = async (serviceData: ServiceFormData) => {
     try {
