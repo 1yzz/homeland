@@ -1,3 +1,7 @@
+'use client'
+
+import { useSystemStore } from '@/stores/systemStore'
+
 interface Service {
   id: number
   name: string
@@ -16,6 +20,7 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({ service }: ServiceCardProps) {
+  const { replaceLocalhost } = useSystemStore()
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'RUNNING':
@@ -127,7 +132,7 @@ export default function ServiceCard({ service }: ServiceCardProps) {
           <div className="flex items-start text-sm text-gray-500 dark:text-gray-400">
             <span className="w-16 flex-shrink-0">地址:</span>
             <a
-              href={service.url}
+              href={replaceLocalhost(service.url || '')}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 dark:text-blue-400 font-mono hover:underline break-all"
@@ -148,7 +153,7 @@ export default function ServiceCard({ service }: ServiceCardProps) {
       <div className="mt-4 flex items-center justify-between">
         {service.url ? (
           <a
-            href={service.url}
+            href={replaceLocalhost(service.url || '')}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800 transition-colors"

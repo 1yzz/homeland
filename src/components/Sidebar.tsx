@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
+import { useSystemStore } from '@/stores/systemStore'
 
 interface SidebarProps {
   isOpen: boolean
@@ -11,26 +12,14 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
-  const [localIP, setLocalIP] = useState<string>('加载中...')
+  const { serverIP, isLoading, fetchServerIP } = useSystemStore()
 
-  // 获取本地IP地址
+  // 获取服务器IP地址
   useEffect(() => {
-    const fetchIP = async () => {
-      try {
-        const response = await fetch('/api/system/ip')
-        if (response.ok) {
-          const data = await response.json()
-          setLocalIP(data.ip || 'localhost')
-        } else {
-          setLocalIP('获取失败')
-        }
-      } catch {
-        setLocalIP('获取失败')
-      }
-    }
-
-    fetchIP()
+    fetchServerIP()
   }, [])
+
+  const localIP = isLoading ? '加载中...' : serverIP
 
   const navigation = [
     {
