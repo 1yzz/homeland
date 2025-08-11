@@ -192,8 +192,8 @@ export class AdaptiveServiceDiscovery {
   }
 
   private async testPortConnection(port: number): Promise<boolean> {
-    return new Promise((resolve) => {
-      const net = require('net')
+    return new Promise(async (resolve) => {
+      const net = await import('net')
       const socket = new net.Socket()
       
       const timeout = setTimeout(() => {

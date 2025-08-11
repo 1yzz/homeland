@@ -17,7 +17,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   // 获取服务器IP地址
   useEffect(() => {
     fetchServerIP()
-  }, [])
+  }, [fetchServerIP])
 
   const localIP = isLoading ? '加载中...' : serverIP
 

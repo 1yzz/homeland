@@ -267,8 +267,8 @@ export class AdaptiveHealthChecker {
       }
     }
 
-    return new Promise((resolve) => {
-      const net = require('net')
+    return new Promise(async (resolve) => {
+      const net = await import('net')
       const socket = new net.Socket()
       const timeoutMs = options.timeoutMs || 5000
       
