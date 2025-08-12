@@ -600,18 +600,19 @@ export class ServiceHealthMonitor {
             select: { status: true }
           });
 
-          // 只同步错误状态的结果到数据库
+          // 同步所有健康检查结果到数据库
+          await prisma.healthCheckResult.create({
+            data: {
+              serviceId: result.serviceId,
+              status: result.status,
+              responseTime: result.responseTime,
+              lastChecked: result.lastChecked,
+              error: result.error,
+              details: result.details
+            }
+          });
+          
           if (result.status === 'UNHEALTHY') {
-            await prisma.healthCheckResult.create({
-              data: {
-                serviceId: result.serviceId,
-                status: result.status,
-                responseTime: result.responseTime,
-                lastChecked: result.lastChecked,
-                error: result.error,
-                details: result.details
-              }
-            });
             errorCount++;
           }
 
@@ -810,9 +811,11 @@ export class GlobalHealthMonitor {
         try {
           const result = await serviceHealthMonitor.performHealthCheck(config);
           
-          // 只打印失败状态的日志，不直接写数据库
+          // 打印健康检查结果日志
           if (result.status === 'UNHEALTHY') {
             console.log(`Service ${config.service.name} (${config.serviceId}): ${result.status} - ${result.error}`);
+          } else {
+            console.log(`Service ${config.service.name} (${config.serviceId}): ${result.status} - ${result.responseTime}ms`);
           }
 
           return { serviceId: config.serviceId, status: result.status, result };
