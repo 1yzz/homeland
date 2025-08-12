@@ -66,6 +66,25 @@ export class ServiceHealthMonitor {
   public results: Map<number, HealthCheckResult> = new Map(); // 改为public以便GlobalHealthMonitor访问
   private timers: Map<number, NodeJS.Timeout> = new Map();
   private syncedResults: Set<string> = new Set(); // 记录已同步的结果
+  private systemCapabilities: { [key: string]: boolean } = {}; // 缓存系统能力检测结果
+
+  /**
+   * 检测系统命令是否可用
+   */
+  private async checkSystemCapability(command: string): Promise<boolean> {
+    if (this.systemCapabilities[command] !== undefined) {
+      return this.systemCapabilities[command];
+    }
+
+    try {
+      await execAsync(`which ${command}`);
+      this.systemCapabilities[command] = true;
+      return true;
+    } catch {
+      this.systemCapabilities[command] = false;
+      return false;
+    }
+  }
 
   /**
    * 根据服务类型自动检测健康检查方法
@@ -181,15 +200,31 @@ export class ServiceHealthMonitor {
    * 检测Systemd服务健康检查
    */
   private async detectSystemdHealthCheck(serviceName: string): Promise<Partial<HealthCheckConfig>> {
-    return {
-      type: 'COMMAND',
-      command: `systemctl is-active ${serviceName}`,
-      timeout: 5000,
-      interval: 60000,
-      retries: 3,
-      expectedResponse: 'active',
-      enabled: true
-    };
+    // 检查systemctl是否可用
+    const hasSystemctl = await this.checkSystemCapability('systemctl');
+    
+    if (hasSystemctl) {
+      return {
+        type: 'COMMAND',
+        command: `systemctl is-active ${serviceName}`,
+        timeout: 5000,
+        interval: 60000,
+        retries: 3,
+        expectedResponse: 'active',
+        enabled: true
+      };
+    } else {
+      // 如果没有systemctl，使用进程检查作为替代
+      return {
+        type: 'COMMAND',
+        command: `pgrep -x ${serviceName} > /dev/null && echo "active" || echo "inactive"`,
+        timeout: 5000,
+        interval: 60000,
+        retries: 3,
+        expectedResponse: 'active',
+        enabled: true
+      };
+    }
   }
 
   /**
@@ -245,14 +280,29 @@ export class ServiceHealthMonitor {
       };
     }
 
-    return {
-      type: 'COMMAND',
-      command: `systemctl is-active ${serviceName}`,
-      timeout: 5000,
-      interval: 60000,
-      retries: 3,
-      enabled: true
-    };
+    // 如果没有专用的数据库检查命令，使用进程检查作为备选
+    const hasSystemctl = await this.checkSystemCapability('systemctl');
+    
+    if (hasSystemctl) {
+      return {
+        type: 'COMMAND',
+        command: `systemctl is-active ${serviceName}`,
+        timeout: 5000,
+        interval: 60000,
+        retries: 3,
+        enabled: true
+      };
+    } else {
+      return {
+        type: 'COMMAND',
+        command: `pgrep -f ${serviceName} > /dev/null && echo "running" || echo "stopped"`,
+        timeout: 5000,
+        interval: 60000,
+        retries: 3,
+        expectedResponse: 'running',
+        enabled: true
+      };
+    }
   }
 
   /**
@@ -277,26 +327,51 @@ export class ServiceHealthMonitor {
       };
     }
 
-    return {
-      type: 'COMMAND',
-      command: `systemctl is-active ${serviceName}`,
-      timeout: 5000,
-      interval: 60000,
-      retries: 3,
-      enabled: true
-    };
+    // 如果没有专用的缓存检查命令，使用进程检查作为备选
+    const hasSystemctl = await this.checkSystemCapability('systemctl');
+    
+    if (hasSystemctl) {
+      return {
+        type: 'COMMAND',
+        command: `systemctl is-active ${serviceName}`,
+        timeout: 5000,
+        interval: 60000,
+        retries: 3,
+        enabled: true
+      };
+    } else {
+      return {
+        type: 'COMMAND',
+        command: `pgrep -f ${serviceName} > /dev/null && echo "running" || echo "stopped"`,
+        timeout: 5000,
+        interval: 60000,
+        retries: 3,
+        expectedResponse: 'running',
+        enabled: true
+      };
+    }
   }
 
   /**
    * 检测自定义服务健康检查
    */
   private async detectCustomHealthCheck(serviceName: string): Promise<Partial<HealthCheckConfig>> {
-    // 尝试检测常见的自定义服务
-    const customChecks = [
-      `systemctl is-active ${serviceName}`,
-      `pgrep -f ${serviceName}`,
-      `ps aux | grep ${serviceName} | grep -v grep`
-    ];
+    // 根据系统能力构建检查命令列表
+    const hasSystemctl = await this.checkSystemCapability('systemctl');
+    const hasPgrep = await this.checkSystemCapability('pgrep');
+    
+    const customChecks = [];
+    
+    if (hasSystemctl) {
+      customChecks.push(`systemctl is-active ${serviceName}`);
+    }
+    
+    if (hasPgrep) {
+      customChecks.push(`pgrep -f ${serviceName} > /dev/null && echo "running" || echo "stopped"`);
+    }
+    
+    // 备用检查方法
+    customChecks.push(`ps aux | grep ${serviceName} | grep -v grep > /dev/null && echo "running" || echo "stopped"`);
 
     for (const command of customChecks) {
       try {
@@ -307,6 +382,7 @@ export class ServiceHealthMonitor {
           timeout: 5000,
           interval: 60000,
           retries: 3,
+          expectedResponse: command.includes('systemctl') ? 'active' : 'running',
           enabled: true
         };
       } catch {
@@ -314,12 +390,14 @@ export class ServiceHealthMonitor {
       }
     }
 
+    // 如果所有命令都失败，返回最基础的ps命令
     return {
       type: 'COMMAND',
-      command: `systemctl is-active ${serviceName}`,
+      command: `ps aux | grep ${serviceName} | grep -v grep > /dev/null && echo "running" || echo "stopped"`,
       timeout: 5000,
       interval: 60000,
       retries: 3,
+      expectedResponse: 'running',
       enabled: true
     };
   }
