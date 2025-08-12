@@ -66,23 +66,45 @@ export async function POST(request: NextRequest) {
       })
     })
 
-    // 创建健康检查配置
-    if (data.healthCheck && data.healthCheck.enabled) {
-      // 使用用户提供的健康检查配置
+    // 创建健康检查配置 - 支持平铺数据结构
+    const hasHealthCheckData = data.healthCheckType || data.healthCheckEnabled !== undefined;
+    
+    if (hasHealthCheckData && data.healthCheckEnabled) {
+      // 使用用户提供的健康检查配置（平铺格式）
       await prisma.healthCheckConfig.create({
         data: {
           serviceId: service.id,
-          type: data.healthCheck.type,
-          url: data.healthCheck.url,
-          port: data.healthCheck.port,
-          command: data.healthCheck.command,
-          script: data.healthCheck.script,
-          timeout: data.healthCheck.timeout,
-          interval: data.healthCheck.interval,
-          retries: data.healthCheck.retries,
-          expectedStatus: data.healthCheck.expectedStatus,
-          expectedResponse: data.healthCheck.expectedResponse,
-          method: data.healthCheck.method,
+          type: data.healthCheckType || 'HTTP',
+          url: data.healthCheckUrl || null,
+          port: data.healthCheckPort ? parseInt(data.healthCheckPort) : null,
+          command: data.healthCheckCommand || null,
+          script: data.healthCheckScript || null,
+          timeout: data.healthCheckTimeout ? parseInt(data.healthCheckTimeout) : 30000,
+          interval: data.healthCheckInterval ? parseInt(data.healthCheckInterval) : 60000,
+          retries: data.healthCheckRetries ? parseInt(data.healthCheckRetries) : 3,
+          expectedStatus: data.healthCheckExpectedStatus ? parseInt(data.healthCheckExpectedStatus) : null,
+          expectedResponse: data.healthCheckExpectedResponse || null,
+          method: data.healthCheckMethod || 'GET',
+          enabled: data.healthCheckEnabled,
+        }
+      })
+    }
+    // 向后兼容嵌套的healthCheck对象结构
+    else if (data.healthCheck && data.healthCheck.enabled) {
+      await prisma.healthCheckConfig.create({
+        data: {
+          serviceId: service.id,
+          type: data.healthCheck.type || 'HTTP',
+          url: data.healthCheck.url || null,
+          port: data.healthCheck.port || null,
+          command: data.healthCheck.command || null,
+          script: data.healthCheck.script || null,
+          timeout: data.healthCheck.timeout || 30000,
+          interval: data.healthCheck.interval || 60000,
+          retries: data.healthCheck.retries || 3,
+          expectedStatus: data.healthCheck.expectedStatus || null,
+          expectedResponse: data.healthCheck.expectedResponse || null,
+          method: data.healthCheck.method || 'GET',
           enabled: data.healthCheck.enabled,
         }
       })
