@@ -1,82 +1,39 @@
-# 使用Node.js 18 Alpine镜像
-FROM node:18.18-alpine AS base
-
-# 安装必要的系统依赖
-RUN apk add --no-cache libc6-compat
+###############################################
+# Build stage: Vite SPA build
+###############################################
+FROM node:20-alpine AS build
 WORKDIR /app
 
-# 安装pnpm
-RUN npm install -g pnpm
+# Install pnpm
+RUN corepack enable || true && npm i -g pnpm
 
-# 复制package文件
-COPY package*.json pnpm-lock.yaml* ./
+# Copy manifests and install deps
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
 
-# 安装依赖阶段
-FROM base AS deps
-# Jenkins环境下不使用cache mount
-RUN pnpm i --frozen-lockfile
-
-# 构建阶段
-FROM base AS builder
-# 定义构建时参数
-ARG DATABASE_URL
-ARG NODE_ENV=production
-ARG PORT=4235
-ARG HOSTNAME=0.0.0.0
-
-# 设置环境变量（构建时使用临时数据库URL）
-ENV DATABASE_URL=$DATABASE_URL
-ENV NODE_ENV=$NODE_ENV
-ENV PORT=$PORT
-ENV HOSTNAME=$HOSTNAME
-
-COPY --from=deps /app/node_modules ./node_modules
+# Copy source and build
 COPY . .
+RUN pnpm build
 
-# 生成Prisma客户端
-RUN pnpm prisma generate
+###############################################
+# Runtime stage: Nginx to serve static files
+###############################################
+FROM nginx:1.27-alpine AS runtime
 
-# 构建应用
-RUN pnpm run build
+# Copy built assets
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# 运行数据库迁移（在构建完成后）
-RUN pnpm prisma db push || echo "数据库迁移失败，继续构建..."
+# Basic SPA fallback config
+RUN printf '\
+server {\n\
+  listen 80;\n\
+  server_name _;\n\
+  root   /usr/share/nginx/html;\n\
+  index  index.html;\n\
+  location / {\n\
+    try_files $uri /index.html;\n\
+  }\n\
+}\n' > /etc/nginx/conf.d/default.conf
 
-# 生产运行阶段
-FROM base AS runner
-WORKDIR /app
-
-# 定义运行时参数
-ARG DATABASE_URL
-ARG NODE_ENV=production
-ARG PORT=4235
-ARG HOSTNAME=0.0.0.0
-
-# 设置环境变量
-ENV DATABASE_URL=$DATABASE_URL
-ENV NODE_ENV=$NODE_ENV
-ENV PORT=$PORT
-ENV HOSTNAME=$HOSTNAME
-
-# 复制必要文件
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
-
-# 创建必要目录并复制文件
-RUN mkdir -p ./public
-
-# 复制Prisma客户端（仅用于应用运行）
-RUN mkdir -p ./node_modules/@prisma
-COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client ./node_modules/@prisma/client
-
-# 确保用户权限
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs && \
-    chown -R nextjs:nodejs /app
-
-USER nextjs
-
-EXPOSE 4235
-
-CMD ["node", "server.js"] 
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

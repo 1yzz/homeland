@@ -4,14 +4,8 @@ pipeline {
     environment {
         // Docker构建配置
         DOCKER_BUILDKIT = '1'
-        
-        // 应用配置
         NODE_ENV = 'production'
         APP_PORT = '4235'
-        APP_HOSTNAME = '0.0.0.0'
-        
-        // 数据库配置
-        DB_NAME = 'homeland_sites'
     }
     
     stages {
@@ -22,41 +16,37 @@ pipeline {
             }
         }
         
+        stage('Install & Build') {
+            steps {
+                sh '''
+                corepack enable || true
+                pnpm -v || npm i -g pnpm
+                pnpm install --frozen-lockfile
+                pnpm build
+                '''
+            }
+        }
+
         stage('Deploy with Docker') {
             steps {
-                withCredentials([string(credentialsId: 'VaioMysql', variable: 'MYSQL_URL')]) {
-                    sh '''
-                    # 构建数据库URL
-                    export DATABASE_URL="${MYSQL_URL}/${DB_NAME}"
-                    
-                    # 停止并删除现有容器
-                    docker stop homeland-app 2>/dev/null || true
-                    docker rm homeland-app 2>/dev/null || true
-                
-                # 构建镜像
-                docker build \
-                    --build-arg DATABASE_URL="$DATABASE_URL" \
-                    --build-arg NODE_ENV="$NODE_ENV" \
-                    --build-arg PORT="$APP_PORT" \
-                    --build-arg HOSTNAME="$APP_HOSTNAME" \
-                    --network host \
-                    -t homeland:latest .
-                
-                # 启动容器
+                sh '''
+                # 停止并删除现有容器
+                docker stop homeland-app 2>/dev/null || true
+                docker rm homeland-app 2>/dev/null || true
+
+                # 构建镜像（Nginx静态服务）
+                docker build -t homeland:latest .
+
+                # 运行容器，映射 4235 -> 80
                 docker run -d \
-                    --name homeland-app \
-                    --network host \
-                    --restart unless-stopped \
-                    -e DATABASE_URL="$DATABASE_URL" \
-                    -e NODE_ENV="$NODE_ENV" \
-                    -e PORT="$APP_PORT" \
-                    -e HOSTNAME="$APP_HOSTNAME" \
-                    homeland:latest
-                
+                  --name homeland-app \
+                  --restart unless-stopped \
+                  -p ${APP_PORT}:80 \
+                  homeland:latest
+
                 # 等待应用启动
-                sleep 10
-                    '''
-                }
+                sleep 5
+                '''
             }
         }
         

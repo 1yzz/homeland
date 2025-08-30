@@ -1,177 +1,169 @@
-# Homeland - 服务监控系统
+# Homeland - Service Management Dashboard
 
-Homeland 是一个基于 Next.js 的服务监控和管理系统，用于发现、监控和管理本机运行的各种服务。
+一个基于React + Material UI的现代化服务管理仪表板，集成了watchdog-grpc-sdk来实现服务的增删改查功能。
 
-## 🚀 功能特性
+## 特性
 
-### 核心功能
-- **服务发现**：自动扫描并发现本机运行的服务
-- **服务管理**：添加、编辑、删除服务
-- **状态监控**：实时显示服务运行状态
-- **智能IP替换**：自动将localhost替换为实际IP地址，方便从其他设备访问
-- **表格展示**：使用表格形式清晰展示服务信息
-- **响应式设计**：支持桌面端和移动端
+- 🚀 **纯SPA架构** - 使用Vite构建的现代React应用
+- 🎨 **Material UI设计** - 美观且响应式的用户界面
+- 📊 **实时监控** - 集成watchdog-grpc-sdk进行服务监控
+- 🔧 **完整CRUD** - 支持服务的增删改查操作
+- 📱 **响应式设计** - 支持各种设备尺寸
+- 🎯 **TypeScript支持** - 完整的类型定义
 
-### 支持的服务类型
-- **HTTP服务**：Web应用、API服务、微服务等
-- **gRPC服务**：高性能RPC服务
-- **Systemd服务**：系统服务管理
-- **Supervisord服务**：进程管理服务
-- **Docker容器**：Docker容器服务
-- **数据库服务**：MySQL、PostgreSQL等
-- **缓存服务**：Redis、Memcached等
-- **自定义服务**：其他类型服务
+## 技术栈
 
-### 技术栈
-- **前端**：Next.js 15 + React 19 + TypeScript
-- **样式**：Tailwind CSS + 深色模式支持
-- **数据库**：MySQL + Prisma ORM
-- **状态管理**：Zustand
-- **开发工具**：Turbopack
+- **前端框架**: React 18 + TypeScript
+- **构建工具**: Vite
+- **UI组件库**: Material UI (MUI)
+- **状态管理**: Zustand
+- **路由**: React Router DOM
+- **服务监控**: watchdog-grpc-sdk
+- **代码质量**: ESLint + TypeScript
 
-## 📦 安装和运行
+## 快速开始
 
-### 环境要求
-- Node.js 18+
-- MySQL 8.0+
-- Linux/macOS/Windows
-
-### 安装步骤
-
-1. **克隆项目**
-```bash
-git clone <repository-url>
-cd homeland
-```
-
-2. **安装依赖**
-```bash
-npm install
-```
-
-3. **配置数据库**
-```bash
-# 创建 .env 文件
-cp .env.example .env
-
-# 编辑 .env 文件，配置数据库连接
-DATABASE_URL="mysql://username:password@localhost:3306/homeland"
-```
-
-4. **初始化数据库**
-```bash
-# 生成 Prisma 客户端
-npx prisma generate
-
-# 推送数据库架构
-npx prisma db push
-
-# 或者使用迁移（推荐）
-npx prisma migrate dev --name init
-```
-
-5. **启动开发服务器**
-```bash
-npm run dev
-```
-
-6. **访问应用**
-打开浏览器访问 [http://localhost:3000](http://localhost:3000)
-
-## 🛠️ 开发命令
+### 安装依赖
 
 ```bash
-# 启动开发服务器
-npm run dev
-
-# 构建生产版本
-npm run build
-
-# 启动生产服务器
-npm start
-
-# 代码检查
-npm run lint
-
-# 数据库操作
-npx prisma generate          # 生成 Prisma 客户端
-npx prisma db push          # 推送架构变更到数据库
-npx prisma migrate dev      # 创建并应用新迁移
-npx prisma studio          # 打开 Prisma Studio 查看数据库
+pnpm install
 ```
 
-## 📁 项目结构
+### 启动开发服务器
+
+```bash
+pnpm dev
+```
+
+应用将在 http://localhost:4235 启动
+
+### 构建生产版本
+
+```bash
+pnpm build
+```
+
+### 预览生产版本
+
+```bash
+pnpm preview
+```
+
+## 项目结构
 
 ```
 src/
-├── app/                    # Next.js App Router
-│   ├── api/               # API 路由
-│   │   ├── admin/         # 管理API
-│   │   ├── services/      # 服务API
-│   │   └── system/        # 系统API
-│   ├── page.tsx           # 首页
-│   ├── services/          # 服务管理页面
-│   └── settings/          # 设置页面
-├── components/            # React 组件
-│   ├── admin/            # 管理组件
-│   ├── ui/               # UI 组件
-│   └── Sidebar.tsx       # 侧边栏
-├── lib/                  # 工具库
-│   ├── db.ts            # 数据库连接
-│   ├── store.ts         # 全局状态管理
-│   └── serviceDiscovery.ts # 服务发现
-└── prisma/              # 数据库架构
-    └── schema.prisma    # Prisma 架构定义
+├── components/          # React组件
+│   ├── Header.tsx      # 导航头部
+│   ├── Dashboard.tsx   # 仪表板页面
+│   ├── ServiceManager.tsx  # 服务管理页面
+│   └── ServiceForm.tsx # 服务表单组件
+├── stores/             # 状态管理
+│   └── serviceStore.ts # 服务状态存储
+├── App.tsx             # 主应用组件
+├── main.tsx            # 应用入口点
+└── index.css           # 全局样式
 ```
 
-## 🔧 配置说明
+## 功能说明
+
+### 仪表板 (Dashboard)
+- 显示服务统计信息（总数、健康、警告、不健康）
+- 最近注册的服务列表
+- 实时刷新功能
+
+### 服务管理 (Service Management)
+- 服务列表展示（使用Material UI DataGrid）
+- 添加新服务
+- 编辑现有服务
+- 删除服务
+- 客户端配置设置
+
+### 支持的服务类型
+- HTTP服务
+- gRPC服务
+- 数据库
+- 缓存
+- 队列
+- 存储
+- 外部API
+- 微服务
+- 其他
+
+## 配置
+
+### Watchdog gRPC客户端配置
+
+默认配置：
+- Host: localhost
+- Port: 50051
+
+可以通过设置对话框修改这些配置。
 
 ### 环境变量
-```env
-# 数据库连接
-DATABASE_URL="mysql://username:password@localhost:3306/homeland"
 
-# 其他配置
-NODE_ENV=development
+可以创建 `.env` 文件来配置环境变量：
+
+```env
+VITE_WATCHDOG_HOST=localhost
+VITE_WATCHDOG_PORT=50051
 ```
 
-### 系统设置
-- **自动IP替换**：在设置页面可以开启/关闭自动将localhost替换为实际IP的功能
-- **服务扫描**：支持手动扫描和自动发现服务
-- **状态监控**：实时监控服务运行状态
+## 开发指南
 
-## 🎯 主要功能
+### 添加新组件
 
-### 服务管理
-- 查看所有服务列表
-- 添加新服务
-- 编辑服务信息
-- 删除服务
-- 服务状态监控
+1. 在 `src/components/` 目录下创建新组件
+2. 使用TypeScript和Material UI组件
+3. 遵循现有的代码风格和命名约定
 
-### 智能IP替换
-- 自动检测本机IP地址
-- 访问服务时自动替换localhost为实际IP
-- 支持多种URL格式（http://localhost:3000, localhost:3000等）
-- 可在设置中开启/关闭此功能
+### 状态管理
 
-### 服务发现
-- 扫描运行中的服务
-- 自动识别服务类型
-- 支持Docker容器发现
-- 支持系统服务发现
+使用Zustand进行状态管理，所有服务相关的状态都在 `serviceStore.ts` 中定义。
 
-## 🤝 贡献
+### 样式
 
-欢迎提交 Issue 和 Pull Request！
+使用Material UI的 `sx` 属性进行样式定制，遵循Material Design规范。
 
-## 📄 许可证
+## 部署
+
+### Docker部署
+
+```bash
+# 构建镜像
+docker build -t homeland .
+
+# 运行容器
+docker run -p 4235:4235 homeland
+```
+
+### 静态部署
+
+构建后的文件在 `dist/` 目录中，可以部署到任何静态文件服务器。
+
+## 故障排除
+
+### 常见问题
+
+1. **gRPC连接失败**
+   - 检查Watchdog服务器是否运行
+   - 验证主机和端口配置
+   - 确保网络连接正常
+
+2. **依赖安装失败**
+   - 清除node_modules并重新安装
+   - 检查Node.js版本（需要18.18.0+）
+   - 使用pnpm而不是npm
+
+3. **构建错误**
+   - 检查TypeScript类型错误
+   - 验证所有依赖是否正确安装
+   - 清除构建缓存
+
+## 贡献
+
+欢迎提交Issue和Pull Request！
+
+## 许可证
 
 MIT License
-
-## 🔗 相关链接
-
-- [Next.js 文档](https://nextjs.org/docs)
-- [Prisma 文档](https://www.prisma.io/docs)
-- [Tailwind CSS 文档](https://tailwindcss.com/docs)
-- [Zustand 文档](https://github.com/pmndrs/zustand)
