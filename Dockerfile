@@ -2,7 +2,6 @@
 # Dependencies stage
 ###############################################
 FROM node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Enable pnpm
@@ -16,7 +15,6 @@ RUN pnpm install --frozen-lockfile --prod
 # Build stage
 ###############################################
 FROM node:20-alpine AS builder
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Enable pnpm
