@@ -109,8 +109,8 @@ pipeline {
         stage('Clean & Install') {
             when {
                 anyOf {
-                    params.FORCE_REBUILD
-                    not { fileExists('node_modules/.pnpm') }
+                    expression { params.FORCE_REBUILD }
+                    expression { !fileExists('node_modules/.pnpm') }
                 }
             }
             steps {
@@ -141,7 +141,7 @@ pipeline {
         
         stage('Code Quality') {
             when {
-                not { params.SKIP_TESTS }
+                expression { !params.SKIP_TESTS }
             }
             parallel {
                 stage('Type Check') {
