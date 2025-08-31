@@ -16,6 +16,8 @@ import {
   Refresh,
 } from '@mui/icons-material'
 import { useServiceStore } from '../stores/serviceStore'
+import Header from './Header'
+import { parseServiceData, getServiceStatus } from '../utils/serviceUtils'
 
 const Dashboard: React.FC = () => {
   const { services, fetchServices, loading } = useServiceStore()
@@ -33,9 +35,18 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (services) {
       const total = services.length
-      const healthy = services.filter(s => s.getStatus() === 'healthy').length
-      const unhealthy = services.filter(s => s.getStatus() === 'unhealthy').length
-      const warning = services.filter(s => s.getStatus() === 'warning').length
+      const healthy = services.filter(s => {
+        const { status } = parseServiceData(s)
+        return getServiceStatus(status) === 'success'
+      }).length
+      const unhealthy = services.filter(s => {
+        const { status } = parseServiceData(s)
+        return getServiceStatus(status) === 'error'
+      }).length
+      const warning = services.filter(s => {
+        const { status } = parseServiceData(s)
+        return getServiceStatus(status) === 'warning'
+      }).length
 
       setStats({ total, healthy, unhealthy, warning })
     }
@@ -71,7 +82,9 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <Box>
+    <>
+      <Header />
+      <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1">
           Dashboard
@@ -126,32 +139,31 @@ const Dashboard: React.FC = () => {
           </Typography>
           {services && services.length > 0 ? (
             <Grid container spacing={2}>
-              {services.slice(0, 6).map((service) => (
-                <Grid item xs={12} sm={6} md={4} key={service.getId()}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="subtitle1" component="div">
-                        {service.getName()}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {service.getEndpoint()}
-                      </Typography>
-                      <Chip
-                        label={service.getStatus()}
-                        color={
-                          service.getStatus() === 'healthy'
-                            ? 'success'
-                            : service.getStatus() === 'warning'
-                            ? 'warning'
-                            : 'error'
-                        }
-                        size="small"
-                        sx={{ mt: 1 }}
-                      />
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+              {services.slice(0, 6).map((service, index) => {
+                const { id, name, endpoint, status } = parseServiceData(service)
+                const serviceId = id || `service-${index}`
+                
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={serviceId}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="subtitle1" component="div">
+                          {name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {endpoint}
+                        </Typography>
+                        <Chip
+                          label={status}
+                          color={getServiceStatus(status)}
+                          size="small"
+                          sx={{ mt: 1 }}
+                        />
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )
+              })}
             </Grid>
           ) : (
             <Typography color="text.secondary">
@@ -160,7 +172,8 @@ const Dashboard: React.FC = () => {
           )}
         </CardContent>
       </Card>
-    </Box>
+      </Box>
+    </>
   )
 }
 

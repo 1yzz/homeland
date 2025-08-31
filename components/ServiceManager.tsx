@@ -8,15 +8,10 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Chip,
   IconButton,
   Tooltip,
   Alert,
-  CircularProgress,
 } from '@mui/material'
 import {
   Add,
@@ -26,8 +21,22 @@ import {
   Settings,
 } from '@mui/icons-material'
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid'
-import { ServiceType } from '../lib/mockWatchdogClient'
-import { useServiceStore, ServiceFormData } from '../stores/serviceStore'
+import { useServiceStore } from '../stores/serviceStore'
+import Header from './Header'
+import { parseServiceData, getServiceTypeLabel } from '../utils/serviceUtils'
+
+export enum ServiceType {
+  SERVICE_TYPE_UNSPECIFIED = 0,
+  SERVICE_TYPE_HTTP = 1,
+  SERVICE_TYPE_GRPC = 2,
+  SERVICE_TYPE_DATABASE = 3,
+  SERVICE_TYPE_CACHE = 4,
+  SERVICE_TYPE_QUEUE = 5,
+  SERVICE_TYPE_STORAGE = 6,
+  SERVICE_TYPE_EXTERNAL_API = 7,
+  SERVICE_TYPE_MICROSERVICE = 8,
+  SERVICE_TYPE_OTHER = 9,
+}
 import ServiceForm from './ServiceForm'
 
 const ServiceManager: React.FC = () => {
@@ -38,29 +47,40 @@ const ServiceManager: React.FC = () => {
     fetchServices,
     unregisterService,
     clearError,
-    initializeClient,
+    setApiBaseUrl,
   } = useServiceStore()
 
   const [openForm, setOpenForm] = useState(false)
-  const [editingService, setEditingService] = useState<any>(null)
+  const [editingService, setEditingService] = useState<{
+    id: string
+    name: string
+    endpoint: string
+    type: number
+    status: string
+  } | null>(null)
   const [openSettings, setOpenSettings] = useState(false)
-  const [clientConfig, setClientConfig] = useState({
-    host: 'localhost',
-    port: 50051,
+  const [apiConfig, setApiConfig] = useState({
+    baseUrl: '/api',
   })
 
   useEffect(() => {
-    // Initialize client on component mount
-    initializeClient(clientConfig.host, clientConfig.port)
+    // Set API base URL and fetch services
+    setApiBaseUrl(apiConfig.baseUrl)
     fetchServices()
-  }, [initializeClient, fetchServices])
+  }, [setApiBaseUrl, fetchServices, apiConfig.baseUrl])
 
   const handleAddService = () => {
     setEditingService(null)
     setOpenForm(true)
   }
 
-  const handleEditService = (service: any) => {
+  const handleEditService = (service: {
+    id: string
+    name: string
+    endpoint: string
+    type: number
+    status: string
+  }) => {
     setEditingService(service)
     setOpenForm(true)
   }
@@ -77,10 +97,22 @@ const ServiceManager: React.FC = () => {
   }
 
   const handleSettingsSave = () => {
-    initializeClient(clientConfig.host, clientConfig.port)
+    setApiBaseUrl(apiConfig.baseUrl)
     fetchServices()
     setOpenSettings(false)
   }
+
+  // Transform services to grid rows using helper function
+  const rows = services.map((service, index) => {
+    const parsedService = parseServiceData(service)
+    return {
+      id: parsedService.id || `service-${index}`,
+      name: parsedService.name,
+      endpoint: parsedService.endpoint,
+      type: parsedService.type,
+      status: parsedService.status,
+    }
+  })
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 100 },
@@ -92,7 +124,7 @@ const ServiceManager: React.FC = () => {
       width: 150,
       renderCell: (params) => (
         <Chip
-          label={ServiceType[params.value]}
+          label={getServiceTypeLabel(params.value)}
           size="small"
           variant="outlined"
         />
@@ -136,16 +168,12 @@ const ServiceManager: React.FC = () => {
     },
   ]
 
-  const transformedServices = services?.map((service) => ({
-    id: service.getId(),
-    name: service.getName(),
-    endpoint: service.getEndpoint(),
-    type: service.getType(),
-    status: service.getStatus(),
-  })) || []
+
 
   return (
-    <Box>
+    <>
+      <Header />
+      <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1">
           Service Management
@@ -182,7 +210,7 @@ const ServiceManager: React.FC = () => {
 
       <Box sx={{ height: 600, width: '100%' }}>
         <DataGrid
-          rows={transformedServices}
+          rows={rows}
           columns={columns}
           loading={loading}
           pageSizeOptions={[10, 25, 50]}
@@ -204,27 +232,19 @@ const ServiceManager: React.FC = () => {
 
       {/* Settings Dialog */}
       <Dialog open={openSettings} onClose={() => setOpenSettings(false)}>
-        <DialogTitle>Client Settings</DialogTitle>
+        <DialogTitle>API Settings</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
-            label="Host"
+            label="API Base URL"
             type="text"
             fullWidth
             variant="outlined"
-            value={clientConfig.host}
-            onChange={(e) => setClientConfig({ ...clientConfig, host: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            label="Port"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={clientConfig.port}
-            onChange={(e) => setClientConfig({ ...clientConfig, port: parseInt(e.target.value) })}
+            value={apiConfig.baseUrl}
+            onChange={(e) => setApiConfig({ ...apiConfig, baseUrl: e.target.value })}
+                          placeholder="/api"
+            helperText="Base URL for the API server that handles gRPC communication"
           />
         </DialogContent>
         <DialogActions>
@@ -234,7 +254,8 @@ const ServiceManager: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      </Box>
+    </>
   )
 }
 

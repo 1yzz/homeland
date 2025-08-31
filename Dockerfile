@@ -1,39 +1,91 @@
 ###############################################
-# Build stage: Vite SPA build
+# Dependencies stage
 ###############################################
-FROM node:20-alpine AS build
+FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat curl
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable || true && npm i -g pnpm
+# Enable pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copy manifests and install deps
+# Copy package files
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile --prod
+
+###############################################
+# Build stage
+###############################################
+FROM node:20-alpine AS builder
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Enable pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy package files and install all dependencies
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile
 
-# Copy source and build
+# Copy source code
 COPY . .
+
+# Build arguments for environment variables
+ARG NEXT_PUBLIC_APP_NAME="Homeland"
+ARG NEXT_PUBLIC_APP_VERSION="1.0.0"
+ARG DATABASE_URL
+ARG WATCHDOG_HOST
+ARG WATCHDOG_PORT
+ARG WATCHDOG_TIMEOUT
+
+# Set environment variables for build
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
+ENV NEXT_PUBLIC_APP_VERSION=$NEXT_PUBLIC_APP_VERSION
+
+# Build Next.js application
 RUN pnpm build
 
 ###############################################
-# Runtime stage: Nginx to serve static files
+# Production runtime stage
 ###############################################
-FROM nginx:1.27-alpine AS runtime
+FROM node:20-alpine AS runner
+RUN apk add --no-cache curl
 
-# Copy built assets
-COPY --from=build /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Basic SPA fallback config
-RUN printf '\
-server {\n\
-  listen 80;\n\
-  server_name _;\n\
-  root   /usr/share/nginx/html;\n\
-  index  index.html;\n\
-  location / {\n\
-    try_files $uri /index.html;\n\
-  }\n\
-}\n' > /etc/nginx/conf.d/default.conf
+# Set production environment
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy production dependencies from deps stage
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+
+# Copy built application
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy package.json for potential runtime operations
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+
+# Switch to non-root user
+USER nextjs
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:$PORT/api/health || exit 1
+
+# Expose port
+EXPOSE 3000
+
+# Environment defaults (can be overridden at runtime)
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Start the application
+CMD ["node", "server.js"]

@@ -13,18 +13,36 @@ import {
   Box,
   Alert,
 } from '@mui/material'
-import { ServiceType } from '../lib/mockWatchdogClient'
-import { useServiceStore, ServiceFormData } from '../stores/serviceStore'
+import { useServiceStore, type ServiceRegistration } from '../stores/serviceStore'
+
+export enum ServiceType {
+  SERVICE_TYPE_UNSPECIFIED = 0,
+  SERVICE_TYPE_HTTP = 1,
+  SERVICE_TYPE_GRPC = 2,
+  SERVICE_TYPE_DATABASE = 3,
+  SERVICE_TYPE_CACHE = 4,
+  SERVICE_TYPE_QUEUE = 5,
+  SERVICE_TYPE_STORAGE = 6,
+  SERVICE_TYPE_EXTERNAL_API = 7,
+  SERVICE_TYPE_MICROSERVICE = 8,
+  SERVICE_TYPE_OTHER = 9,
+}
 
 interface ServiceFormProps {
   open: boolean
   onClose: () => void
-  service?: any
+  service?: {
+    id: string
+    name: string
+    endpoint: string
+    type: number
+    status: string
+  } | null
 }
 
 const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, service }) => {
   const { registerService, loading, error, clearError } = useServiceStore()
-  const [formData, setFormData] = useState<ServiceFormData>({
+  const [formData, setFormData] = useState<ServiceRegistration>({
     name: '',
     endpoint: '',
     type: ServiceType.SERVICE_TYPE_HTTP,

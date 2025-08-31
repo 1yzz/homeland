@@ -1,5 +1,6 @@
 import React from 'react'
-import { Link as RouterLink, useLocation } from 'react-router-dom'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
 import {
   AppBar,
   Toolbar,
@@ -11,7 +12,7 @@ import {
 import { Monitor, Dashboard } from '@mui/icons-material'
 
 const Header: React.FC = () => {
-  const location = useLocation()
+  const router = useRouter()
 
   const navItems = [
     { path: '/', label: 'Dashboard', icon: <Dashboard /> },
@@ -34,21 +35,20 @@ const Header: React.FC = () => {
           
           <Box sx={{ display: 'flex', gap: 1 }}>
             {navItems.map((item) => (
-              <Button
-                key={item.path}
-                component={RouterLink}
-                to={item.path}
-                startIcon={item.icon}
-                sx={{
-                  color: 'white',
-                  backgroundColor: location.pathname === item.path ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  },
-                }}
-              >
-                {item.label}
-              </Button>
+              <Link key={item.path} href={item.path} passHref legacyBehavior>
+                <Button
+                  startIcon={item.icon}
+                  sx={{
+                    color: 'white',
+                    backgroundColor: router.pathname === item.path ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    },
+                  }}
+                >
+                  {item.label}
+                </Button>
+              </Link>
             ))}
           </Box>
         </Toolbar>

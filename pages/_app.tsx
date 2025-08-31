@@ -1,10 +1,7 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import type { AppProps } from 'next/app'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import App from './App.tsx'
-import './index.css'
+import '../styles/globals.css'
 
 const theme = createTheme({
   palette: {
@@ -18,13 +15,11 @@ const theme = createTheme({
   },
 })
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+export default function App({ Component, pageProps }: AppProps) {
+  return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <Component {...pageProps} />
     </ThemeProvider>
-  </React.StrictMode>,
-)
+  )
+}
