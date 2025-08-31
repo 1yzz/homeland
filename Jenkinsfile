@@ -39,6 +39,7 @@ pipeline {
         // 从参数或环境变量获取配置
         PORT = "${params.APP_PORT}"
         EXPOSE_PORT = "${params.EXPOSE_PORT}"
+        SKIP_TESTS = "${params.SKIP_TESTS}"
         
         // 应用配置
         NEXT_PUBLIC_APP_NAME = 'Homeland'
@@ -85,101 +86,28 @@ pipeline {
         stage('Environment Setup') {
             steps {
                 sh '''
-                echo "🔧 设置构建环境..."
+                echo "🔧 检查构建环境..."
                 
                 # 检查Docker
                 docker --version
-                
-                # 启用pnpm
-                corepack enable || true
-                
-                # 检查或安装pnpm
-                if ! pnpm -v; then
-                    echo "安装pnpm..."
-                    npm install -g pnpm
-                fi
-                
-                echo "   ✅ Node.js $(node --version)"
-                echo "   ✅ pnpm $(pnpm --version)"
                 echo "   ✅ Docker $(docker --version | cut -d' ' -f3)"
-                '''
-            }
-        }
-        
-        stage('Clean & Install') {
-            when {
-                anyOf {
-                    expression { params.FORCE_REBUILD }
-                    expression { !fileExists('node_modules/.pnpm') }
-                }
-            }
-            steps {
-                sh '''
-                echo "🧹 清理构建环境..."
                 
-                # 清理构建文件
-                rm -rf .next out dist node_modules/.cache || true
-                
-                # 如果强制重建，清理依赖
+                # 清理旧的构建镜像（如果存在）
                 if [ "$FORCE_REBUILD" = "true" ]; then
-                    echo "   强制清理依赖..."
-                    rm -rf node_modules || true
+                    echo "   强制清理Docker构建缓存..."
+                    docker builder prune -f || true
                 fi
                 '''
             }
         }
         
-        stage('Install Dependencies') {
-            steps {
-                sh '''
-                echo "📦 安装依赖..."
-                pnpm install --frozen-lockfile
-                echo "   依赖安装完成"
-                '''
-            }
-        }
-        
-        stage('Code Quality') {
-            when {
-                expression { !params.SKIP_TESTS }
-            }
-            parallel {
-                stage('Type Check') {
-                    steps {
-                        sh '''
-                        echo "🔍 TypeScript 类型检查..."
-                        pnpm type-check
-                        '''
-                    }
-                }
-                stage('Lint Check') {
-                    steps {
-                        sh '''
-                        echo "📝 ESLint 代码检查..."
-                        pnpm lint
-                        '''
-                    }
-                }
-            }
-        }
-        
-        stage('Build Application') {
-            steps {
-                sh '''
-                echo "🔨 构建应用..."
-                pnpm build
-                echo "   应用构建完成"
-                '''
-            }
-        }
-        
-        stage('Docker Build') {
+        stage('Docker Build & Test') {
             steps {
                 script {
                     sh '''
-                    echo "🐳 构建Docker镜像..."
+                    echo "🐳 构建Docker镜像（包含代码检查和构建）..."
                     
-                    # 构建镜像
+                    # 构建Docker镜像，Docker会处理所有的依赖安装、代码检查和应用构建
                     docker build \
                         --build-arg NEXT_PUBLIC_APP_NAME="${NEXT_PUBLIC_APP_NAME}" \
                         --build-arg NEXT_PUBLIC_APP_VERSION="${NEXT_PUBLIC_APP_VERSION}" \
@@ -187,11 +115,14 @@ pipeline {
                         --build-arg WATCHDOG_HOST="${WATCHDOG_HOST:-localhost}" \
                         --build-arg WATCHDOG_PORT="${WATCHDOG_PORT:-50051}" \
                         --build-arg WATCHDOG_TIMEOUT="${WATCHDOG_TIMEOUT:-10000}" \
+                        --build-arg SKIP_TESTS="${SKIP_TESTS}" \
                         -t homeland:${IMAGE_TAG} \
                         -t homeland:latest \
                         .
                     
-                    echo "   镜像构建完成: homeland:${IMAGE_TAG}"
+                    echo "   ✅ 镜像构建完成: homeland:${IMAGE_TAG}"
+                    echo "   📋 镜像信息:"
+                    docker images homeland:${IMAGE_TAG} --format "table {{.Repository}}:{{.Tag}}\\t{{.Size}}\\t{{.CreatedAt}}"
                     '''
                 }
             }

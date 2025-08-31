@@ -36,12 +36,23 @@ ARG DATABASE_URL
 ARG WATCHDOG_HOST
 ARG WATCHDOG_PORT
 ARG WATCHDOG_TIMEOUT
+ARG SKIP_TESTS="false"
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
 ENV NEXT_PUBLIC_APP_VERSION=$NEXT_PUBLIC_APP_VERSION
+
+# Run code quality checks (unless skipped)
+RUN if [ "$SKIP_TESTS" != "true" ]; then \
+        echo "🔍 运行代码质量检查..."; \
+        pnpm type-check; \
+        pnpm lint; \
+        echo "✅ 代码质量检查通过"; \
+    else \
+        echo "⚠️ 跳过代码质量检查"; \
+    fi
 
 # Build Next.js application
 RUN pnpm build
