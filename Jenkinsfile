@@ -39,6 +39,14 @@ pipeline {
         // 应用配置
         NEXT_PUBLIC_APP_NAME = 'Homeland'
         NEXT_PUBLIC_APP_VERSION = "${env.BUILD_NUMBER}.0.0"
+        
+        // Watchdog服务配置
+        WATCHDOG_HOST = 'localhost'
+        WATCHDOG_PORT = '50051'
+        WATCHDOG_TIMEOUT = '10000'
+        
+        // 数据库配置（可选）
+        DATABASE_URL = ''
     }
     
     options {
