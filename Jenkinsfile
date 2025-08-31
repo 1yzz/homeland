@@ -178,7 +178,10 @@ pipeline {
                     attempt=1
                     
                     while [ $attempt -le $max_attempts ]; do
-                        if wget --no-verbose --tries=1 --spider http://localhost:${EXPOSE_PORT}/api/health >/dev/null 2>&1; then
+                        # 使用wget获取健康检查响应并解析JSON
+                        response=$(wget --no-verbose --tries=1 -O- http://localhost:${EXPOSE_PORT}/api/health 2>/dev/null || echo "")
+                        
+                        if [ -n "$response" ] && echo "$response" | grep -q '"status":"healthy"'; then
                             echo "   ✅ 应用启动成功！"
                             break
                         fi
