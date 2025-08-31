@@ -1,18 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { WatchdogClient } from 'watchdog-grpc-sdk'
-
-let watchdogClient: WatchdogClient | null = null
-
-function getClient() {
-  if (!watchdogClient) {
-    watchdogClient = new WatchdogClient({
-      host: process.env.WATCHDOG_HOST || 'localhost',
-      port: parseInt(process.env.WATCHDOG_PORT || '50051', 10),
-      timeout: 5000,
-    })
-  }
-  return watchdogClient
-}
 
 export default async function handler(
   req: NextApiRequest,
@@ -20,9 +6,14 @@ export default async function handler(
 ) {
   if (req.method === 'GET') {
     try {
-      const client = getClient()
-      const health = await client.getHealth()
-      res.status(200).json(health)
+      // 简单的健康检查，不依赖外部服务
+      res.status(200).json({ 
+        status: 'healthy', 
+        message: 'Application is running',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        version: process.env.NEXT_PUBLIC_APP_VERSION || 'unknown'
+      })
     } catch (error) {
       console.error('Health check failed:', error)
       res.status(500).json({ 
