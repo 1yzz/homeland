@@ -314,9 +314,6 @@ echo $DATABASE_URL
 # 应用日志
 docker logs -f homeland-app
 
-# 系统日志
-journalctl -f
-
 # PM2 日志
 pm2 logs homeland
 ```
@@ -325,7 +322,7 @@ pm2 logs homeland
 
 ```bash
 # 应用健康检查
-curl -f http://localhost:3000/api/health
+wget --no-verbose --tries=1 --spider http://localhost:3000/api/health
 
 # Docker 健康检查
 docker inspect homeland-app | grep Health -A 10

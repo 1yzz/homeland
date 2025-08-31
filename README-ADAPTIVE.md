@@ -6,7 +6,7 @@ Homeland 现在支持自适应服务发现，可以根据运行环境自动选�
 
 ### 🔍 智能环境检测
 - 自动检测是否运行在Docker容器中
-- 检查可用的系统命令（systemctl、docker、netstat等）
+- 检查可用的系统命令（docker、netstat等）
 - 根据环境能力调整扫描策略
 
 ### 📊 三种扫描模式

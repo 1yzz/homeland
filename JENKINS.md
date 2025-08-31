@@ -19,7 +19,6 @@
 
 | 参数名 | 类型 | 默认值 | 描述 |
 |--------|------|--------|------|
-| `DEPLOY_ENV` | Choice | staging | 部署环境 (staging/production) |
 | `APP_PORT` | String | 3000 | 应用内部端口 |
 | `EXPOSE_PORT` | String | 3000 | 对外暴露端口 |
 | `SKIP_TESTS` | Boolean | false | 跳过测试和代码检查 |
@@ -117,7 +116,6 @@ NODE_OPTIONS="--max-old-space-size=4096"
 1. **标准构建**:
    ```
    Build with Parameters
-   - DEPLOY_ENV: staging
    - APP_PORT: 3000
    - EXPOSE_PORT: 3000
    - SKIP_TESTS: false
@@ -144,7 +142,7 @@ NODE_OPTIONS="--max-old-space-size=4096"
 docker logs -f homeland-app
 
 # 检查应用健康
-curl http://localhost:3000/api/health
+wget --no-verbose --tries=1 -O- http://localhost:3000/api/health
 ```
 
 ## 🔧 故障排查
@@ -199,7 +197,7 @@ docker logs homeland-app
 **症状**: 应用启动后健康检查API无响应
 ```bash
 # 检查方法
-curl -v http://localhost:3000/api/health
+wget --no-verbose --tries=1 -O- http://localhost:3000/api/health
 telnet localhost 3000
 ```
 
@@ -216,9 +214,6 @@ telnet localhost 3000
 
 # Docker容器日志
 docker logs --since 1h homeland-app > app.log
-
-# 系统日志
-journalctl -u docker --since "1 hour ago"
 
 # 应用性能
 docker stats homeland-app

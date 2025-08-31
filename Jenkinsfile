@@ -2,11 +2,6 @@ pipeline {
     agent any
     
     parameters {
-        choice(
-            name: 'DEPLOY_ENV',
-            choices: ['staging', 'production'],
-            description: '部署环境选择'
-        )
         string(
             name: 'APP_PORT',
             defaultValue: '3000',
@@ -64,13 +59,13 @@ pipeline {
                     
                     // 显示构建信息
                     echo """
-                    🏗️  Jenkins CI/CD 流水线启动
+                    🏗️  Jenkins CI/CD 流水线启动 (生产环境)
                     
                     📋 构建信息:
                        构建编号: ${env.BUILD_NUMBER}
                        Git提交: ${env.GIT_COMMIT?.take(7) ?: 'unknown'}
                        分支: ${env.GIT_BRANCH ?: 'unknown'}
-                       部署环境: ${params.DEPLOY_ENV}
+                       部署环境: production
                        
                     ⚙️  应用配置:
                        应用端口: ${params.APP_PORT}
@@ -175,7 +170,7 @@ pipeline {
                     attempt=1
                     
                     while [ $attempt -le $max_attempts ]; do
-                        if curl -f http://localhost:${EXPOSE_PORT}/api/health >/dev/null 2>&1; then
+                        if wget --no-verbose --tries=1 --spider http://localhost:${EXPOSE_PORT}/api/health >/dev/null 2>&1; then
                             echo "   ✅ 应用启动成功！"
                             break
                         fi
@@ -194,7 +189,7 @@ pipeline {
                     
                     # 额外的健康检查
                     echo "   执行详细健康检查..."
-                    response=$(curl -s http://localhost:${EXPOSE_PORT}/api/health)
+                    response=$(wget --no-verbose --tries=1 -O- http://localhost:${EXPOSE_PORT}/api/health 2>/dev/null || echo "健康检查失败")
                     echo "   健康检查响应: $response"
                     '''
                 }
@@ -230,11 +225,11 @@ pipeline {
         success {
             script {
                 echo """
-                🎉 部署成功！
+                🎉 生产环境部署成功！
                 
                 📊 应用信息:
                    地址: http://localhost:${params.EXPOSE_PORT}
-                   环境: ${params.DEPLOY_ENV}
+                   环境: production
                    版本: ${env.NEXT_PUBLIC_APP_VERSION}
                    镜像: homeland:${env.IMAGE_TAG}
                 

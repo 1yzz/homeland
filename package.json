@@ -21,8 +21,7 @@
     "docker:stop": "docker stop homeland-app && docker rm homeland-app",
     "docker:logs": "docker logs -f homeland-app",
     "docker:restart": "pnpm docker:stop && pnpm docker:run",
-    "deploy": "./docker-deploy.sh",
-    "deploy:prod": "NODE_ENV=production ./docker-deploy.sh"
+    "deploy": "NODE_ENV=production ./docker-deploy.sh"
   },
   "dependencies": {
     "@emotion/react": "^11.11.3",

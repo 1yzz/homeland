@@ -2,13 +2,14 @@
 
 set -e  # 遇到错误立即退出
 
-echo "🚀 开始 Homeland Docker 部署..."
+echo "🚀 开始 Homeland 生产环境 Docker 部署..."
 
 # 配置默认值
 APP_NAME="homeland-app"
 APP_PORT="${PORT:-3000}"
 EXPOSE_PORT="${EXPOSE_PORT:-3000}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
+DEPLOY_ENV="production"
 
 # 检查必要的环境变量
 check_env_vars() {
@@ -113,7 +114,7 @@ wait_for_app() {
     local attempt=1
     
     while [ $attempt -le $max_attempts ]; do
-        if curl -f "http://localhost:${EXPOSE_PORT}/api/health" >/dev/null 2>&1; then
+        if wget --no-verbose --tries=1 --spider "http://localhost:${EXPOSE_PORT}/api/health" >/dev/null 2>&1; then
             echo "   应用启动成功！"
             return 0
         fi

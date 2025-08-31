@@ -84,9 +84,9 @@ The `Service` model replaced the original `Website` model and includes:
     - Incorrect database configuration
     - Network/port issues preventing connection
   - Troubleshooting steps:
-    - Verify MySQL service is started: `sudo systemctl status mysql`
     - Check database credentials in `.env` file
     - Ensure `localhost:3306` is accessible
+    - Test database connection manually
     - Restart MySQL service if needed
 
 ### Build and Deployment Issues
