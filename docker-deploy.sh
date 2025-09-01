@@ -23,8 +23,8 @@ check_env_vars() {
     fi
     
     if [ -z "$WATCHDOG_HOST" ]; then
-        echo "⚠️  警告: WATCHDOG_HOST 环境变量未设置，使用默认值 localhost"
-        export WATCHDOG_HOST="localhost"
+        echo "⚠️  警告: WATCHDOG_HOST 环境变量未设置，使用默认值 host.docker.internal"
+        export WATCHDOG_HOST="host.docker.internal"
     fi
     
     if [ -z "$WATCHDOG_PORT" ]; then
@@ -82,12 +82,16 @@ run_container() {
         "-d"
         "--name" "$APP_NAME"
         "--restart" "unless-stopped"
-        "-p" "${EXPOSE_PORT}:${APP_PORT}"
-        "-p" "${WATCHDOG_EXPOSE_PORT}:50051"
         "-e" "NODE_ENV=production"
         "-e" "PORT=${APP_PORT}"
         "-e" "HOSTNAME=0.0.0.0"
     )
+    
+    # 使用 bridge 网络模式（默认）
+    echo "🌐 使用 bridge 网络模式"
+    RUN_ARGS+=("--add-host" "host.docker.internal:host-gateway")
+    RUN_ARGS+=("-p" "${EXPOSE_PORT}:${APP_PORT}")
+    RUN_ARGS+=("-p" "${WATCHDOG_EXPOSE_PORT}:50051")
     
     # 添加环境变量
     if [ -n "$DATABASE_URL" ]; then
@@ -136,9 +140,10 @@ wait_for_app() {
 show_deployment_info() {
     echo ""
     echo "🎉 部署完成！"
+    echo "🌐 网络模式: bridge"
+    echo "🔌 Watchdog 连接: ${WATCHDOG_HOST}:${WATCHDOG_PORT}"
     echo "📊 应用地址: http://localhost:${EXPOSE_PORT}"
     echo "🔍 健康检查: http://localhost:${EXPOSE_PORT}/api/health"
-    echo "🔌 Watchdog gRPC: localhost:${WATCHDOG_EXPOSE_PORT}"
     echo ""
     echo "📋 管理命令:"
     echo "   查看日志: docker logs -f $APP_NAME"

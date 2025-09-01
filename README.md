@@ -164,8 +164,13 @@ package.json          # 项目依赖和脚本
 可以设置以下环境变量来配置Watchdog gRPC服务器连接：
 
 ```env
-WATCHDOG_HOST=localhost
+# Docker环境使用 host.docker.internal 连接宿主机
+WATCHDOG_HOST=host.docker.internal
 WATCHDOG_PORT=50051
+
+# 本地开发环境使用 localhost
+# WATCHDOG_HOST=localhost
+# WATCHDOG_PORT=50051
 ```
 
 ### 前端配置
