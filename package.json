@@ -17,7 +17,7 @@
     "test": "echo \"No tests yet\" && exit 0",
     "clean": "rm -rf .next out dist node_modules/.cache",
     "docker:build": "docker build -t homeland:latest .",
-    "docker:run": "docker run -d -p 3000:3000 --name homeland-app --env-file .env.local homeland:latest",
+    "docker:run": "docker run -d -p 30010:30010 --name homeland-app --env-file .env.local homeland:latest",
     "docker:stop": "docker stop homeland-app && docker rm homeland-app",
     "docker:logs": "docker logs -f homeland-app",
     "docker:restart": "pnpm docker:stop && pnpm docker:run",
