@@ -4,12 +4,12 @@ pipeline {
     parameters {
         string(
             name: 'APP_PORT',
-            defaultValue: '3000',
+            defaultValue: '30010',
             description: '应用端口'
         )
         string(
             name: 'EXPOSE_PORT', 
-            defaultValue: '3000',
+            defaultValue: '30010',
             description: '对外暴露端口'
         )
         booleanParam(
