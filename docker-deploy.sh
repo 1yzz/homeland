@@ -6,8 +6,8 @@ echo "🚀 开始 Homeland 生产环境 Docker 部署..."
 
 # 配置默认值
 APP_NAME="homeland-app"
-APP_PORT="${PORT:-3000}"
-EXPOSE_PORT="${EXPOSE_PORT:-3000}"
+APP_PORT="${PORT:-30010}"
+EXPOSE_PORT="${EXPOSE_PORT:-30010}"
 WATCHDOG_EXPOSE_PORT="${WATCHDOG_EXPOSE_PORT:-50051}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 DEPLOY_ENV="production"

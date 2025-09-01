@@ -42,6 +42,8 @@ pnpm install
 
 # 启动开发服务器
 pnpm dev
+
+# 应用将在 http://localhost:30010 启动
 ```
 
 ## 🛠️ 环境准备
@@ -142,7 +144,8 @@ docker build -t homeland:latest .
 docker run -d \
   --name homeland-app \
   --restart unless-stopped \
-  -p 3000:3000 \
+  -p 30010:30010 \
+  -p 50051:50051 \
   -e DATABASE_URL="your-database-url" \
   -e WATCHDOG_HOST="localhost" \
   -e WATCHDOG_PORT="50051" \

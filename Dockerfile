@@ -4,12 +4,14 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Enable pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm globally for better performance
+RUN npm install -g pnpm@latest
 
-# Copy package files
+# Copy package files first for better layer caching
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile --prod
+
+# Install dependencies with optimizations
+RUN pnpm install --frozen-lockfile --prod --prefer-offline --no-optional
 
 ###############################################
 # Build stage
@@ -17,14 +19,16 @@ RUN pnpm install --frozen-lockfile --prod
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Enable pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm globally
+RUN npm install -g pnpm@latest
 
-# Copy package files and install all dependencies
+# Copy package files first for better layer caching
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
 
-# Copy source code
+# Install all dependencies with optimizations
+RUN pnpm install --frozen-lockfile --prefer-offline --no-optional
+
+# Copy source code (exclude node_modules for better performance)
 COPY . .
 
 # Build arguments for environment variables
@@ -88,11 +92,11 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/api/health || exit 1
 
 # Expose ports
-EXPOSE 3000
+EXPOSE 30010
 EXPOSE 50051
 
 # Environment defaults (can be overridden at runtime)
-ENV PORT=3000
+ENV PORT=30010
 ENV HOSTNAME="0.0.0.0"
 
 # Start the application

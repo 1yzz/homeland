@@ -67,29 +67,31 @@ pnpm install
 ### 启动开发服务器
 
 ```bash
-# 同时启动前端和API服务器
+# 启动开发服务器
 pnpm dev
-
-# 或者分别启动
-pnpm dev:client  # React前端 (http://localhost:4235)
-pnpm dev:api     # Next.js API (http://localhost:3001)
 ```
 
 ### 构建生产版本
 
 ```bash
-# 构建所有
+# 构建应用
 pnpm build
-
-# 分别构建
-pnpm build:client  # 构建React应用
-pnpm build:api     # 构建Next.js API
 ```
 
-### 启动生产API服务器
+### 启动生产服务器
 
 ```bash
-pnpm start:api
+pnpm start
+```
+
+### Docker 部署
+
+```bash
+# 使用默认端口 (30010:30010, 50051:50051)
+./docker-deploy.sh
+
+# 使用自定义端口
+EXPOSE_PORT=30011 WATCHDOG_EXPOSE_PORT=50052 ./docker-deploy.sh
 ```
 
 ## 项目结构
@@ -169,7 +171,7 @@ WATCHDOG_PORT=50051
 ### 前端配置
 
 前端通过设置对话框配置API服务器地址：
-- 默认API Base URL: http://localhost:3001/api
+- 默认API Base URL: http://localhost:30010/api
 
 ## 开发指南
 
@@ -201,7 +203,7 @@ WATCHDOG_PORT=50051
 docker build -t homeland .
 
 # 运行容器
-docker run -p 80:80 homeland
+docker run -p 30010:30010 -p 50051:50051 homeland
 ```
 
 ### 分离部署
@@ -222,19 +224,19 @@ pnpm start:api
 
 ### 测试健康检查
 ```bash
-curl http://localhost:3001/api/health
+curl http://localhost:30010/api/health
 ```
 
 ### 测试服务注册
 ```bash
-curl -X POST http://localhost:3001/api/services \
+curl -X POST http://localhost:30010/api/services \
   -H "Content-Type: application/json" \
   -d '{"name":"test-service","endpoint":"http://localhost:8080","type":1}'
 ```
 
 ### 测试服务列表
 ```bash
-curl http://localhost:3001/api/services
+curl http://localhost:30010/api/services
 ```
 
 ## 故障排除
@@ -247,12 +249,12 @@ curl http://localhost:3001/api/services
    - 确保网络连接正常
 
 2. **API服务器无法启动**
-   - 检查端口3001是否被占用
+   - 检查端口30010是否被占用
    - 验证Next.js依赖是否正确安装
    - 查看Next.js错误日志
 
 3. **前端无法连接API**
-   - 确认API服务器在 http://localhost:3001 运行
+   - 确认API服务器在 http://localhost:30010 运行
    - 检查前端API配置是否正确
    - 验证CORS设置
 
@@ -267,17 +269,14 @@ curl http://localhost:3001/api/services
 # 安装依赖
 pnpm install
 
-# 开发模式（同时启动前后端）
+# 开发模式
 pnpm dev
 
-# 仅启动前端
-pnpm dev:client
-
-# 仅启动API服务器
-pnpm dev:api
-
-# 构建所有
+# 构建应用
 pnpm build
+
+# 启动生产服务器
+pnpm start
 
 # 代码检查
 pnpm lint
