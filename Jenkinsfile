@@ -41,7 +41,7 @@ pipeline {
         NEXT_PUBLIC_APP_VERSION = "${env.BUILD_NUMBER}.0.0"
         
         // Watchdog服务配置
-        WATCHDOG_HOST = 'localhost'
+        WATCHDOG_HOST = 'host.docker.internal'
         WATCHDOG_PORT = '50051'
         WATCHDOG_TIMEOUT = '10000'
         
@@ -115,7 +115,7 @@ pipeline {
                         --build-arg NEXT_PUBLIC_APP_NAME="${NEXT_PUBLIC_APP_NAME}" \
                         --build-arg NEXT_PUBLIC_APP_VERSION="${NEXT_PUBLIC_APP_VERSION}" \
                         --build-arg DATABASE_URL="${DATABASE_URL:-}" \
-                        --build-arg WATCHDOG_HOST="${WATCHDOG_HOST:-localhost}" \
+                        --build-arg WATCHDOG_HOST="${WATCHDOG_HOST:-host.docker.internal}" \
                         --build-arg WATCHDOG_PORT="${WATCHDOG_PORT:-50051}" \
                         --build-arg WATCHDOG_TIMEOUT="${WATCHDOG_TIMEOUT:-10000}" \
                         --build-arg SKIP_TESTS="${SKIP_TESTS}" \
@@ -151,12 +151,14 @@ pipeline {
                 docker run -d \
                     --name ${APP_NAME} \
                     --restart unless-stopped \
+                    --add-host host.docker.internal:host-gateway \
                     -p ${EXPOSE_PORT}:${PORT} \
+                    -p 50051:50051 \
                     -e NODE_ENV=production \
                     -e PORT=${PORT} \
                     -e HOSTNAME=0.0.0.0 \
                     -e DATABASE_URL="${DATABASE_URL:-}" \
-                    -e WATCHDOG_HOST="${WATCHDOG_HOST:-localhost}" \
+                    -e WATCHDOG_HOST="${WATCHDOG_HOST:-host.docker.internal}" \
                     -e WATCHDOG_PORT="${WATCHDOG_PORT:-50051}" \
                     -e WATCHDOG_TIMEOUT="${WATCHDOG_TIMEOUT:-10000}" \
                     homeland:${IMAGE_TAG}
