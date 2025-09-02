@@ -7,7 +7,7 @@ function getClient() {
   if (!watchdogClient) {
     try {
       watchdogClient = new WatchdogClient({
-        host: process.env.WATCHDOG_HOST || 'localhost',
+        host: process.env.WATCHDOG_HOST || 'host.docker.internal',
         port: parseInt(process.env.WATCHDOG_PORT || '50051', 10),
         timeout: parseInt(process.env.WATCHDOG_TIMEOUT || '10000', 10),
       })

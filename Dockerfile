@@ -98,6 +98,9 @@ EXPOSE 50051
 # Environment defaults (can be overridden at runtime)
 ENV PORT=30010
 ENV HOSTNAME="0.0.0.0"
+ENV WATCHDOG_HOST="host.docker.internal"
+ENV WATCHDOG_PORT="50051"
+ENV WATCHDOG_TIMEOUT="10000"
 
 # Start the application
 CMD ["node", "server.js"]
