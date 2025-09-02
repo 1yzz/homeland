@@ -153,7 +153,6 @@ pipeline {
                     --restart unless-stopped \
                     --add-host host.docker.internal:host-gateway \
                     -p ${EXPOSE_PORT}:${PORT} \
-                    -p 50051:50051 \
                     -e NODE_ENV=production \
                     -e PORT=${PORT} \
                     -e HOSTNAME=0.0.0.0 \
