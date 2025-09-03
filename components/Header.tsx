@@ -35,7 +35,7 @@ const Header: React.FC = () => {
           
           <Box sx={{ display: 'flex', gap: 1 }}>
             {navItems.map((item) => (
-              <Link key={item.path} href={item.path} passHref legacyBehavior>
+              <Link key={item.path} href={item.path} style={{ textDecoration: 'none' }}>
                 <Button
                   startIcon={item.icon}
                   sx={{

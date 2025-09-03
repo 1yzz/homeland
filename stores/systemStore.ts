@@ -10,8 +10,8 @@ interface SystemState {
 }
 
 export const useSystemStore = create<SystemState>((set, get) => ({
-  serverIP: 'localhost',
-  isLoading: true,
+    serverIP: 'localhost',
+    isLoading: true,
   
   setServerIP: (ip: string) => set({ serverIP: ip }),
   
@@ -48,4 +48,5 @@ export const useSystemStore = create<SystemState>((set, get) => ({
       .replace(/localhost/g, serverIP)
       .replace(/127\.0\.0\.1/g, serverIP)
   },
+
 }))

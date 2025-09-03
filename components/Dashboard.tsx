@@ -7,6 +7,8 @@ import {
   Box,
   Chip,
   CircularProgress,
+  IconButton,
+  Button,
 } from '@mui/material'
 import {
   Monitor,
@@ -14,13 +16,16 @@ import {
   Error,
   Warning,
   Refresh,
+  Launch,
 } from '@mui/icons-material'
 import { useServiceStore } from '../stores/serviceStore'
+import { useSystemStore } from '../stores/systemStore'
 import Header from './Header'
 import { parseServiceData, getServiceStatus } from '../utils/serviceUtils'
 
 const Dashboard: React.FC = () => {
   const { services, fetchServices, loading } = useServiceStore()
+  const { replaceLocalhost, serverIP } = useSystemStore()
   const [stats, setStats] = useState({
     total: 0,
     healthy: 0,
@@ -89,12 +94,19 @@ const Dashboard: React.FC = () => {
         <Typography variant="h4" component="h1">
           Dashboard
         </Typography>
-        <Chip
-          icon={<Refresh />}
-          label="Refresh"
-          onClick={fetchServices}
-          clickable
-        />
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <Typography variant="caption" color="text.secondary">
+              Server IP: {serverIP}
+            </Typography>
+          </Box>
+          <Chip
+            icon={<Refresh />}
+            label="Refresh"
+            onClick={fetchServices}
+            clickable
+          />
+        </Box>
       </Box>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -147,10 +159,25 @@ const Dashboard: React.FC = () => {
                   <Grid item xs={12} sm={6} md={4} key={serviceId}>
                     <Card variant="outlined">
                       <CardContent>
-                        <Typography variant="subtitle1" component="div">
-                          {name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                          <Typography variant="subtitle1" component="div">
+                            {name}
+                          </Typography>
+                          {endpoint && (
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                const finalUrl = replaceLocalhost(endpoint)
+                                window.open(finalUrl, '_blank', 'noopener,noreferrer')
+                              }}
+                              title={`Open ${endpoint}`}
+                              sx={{ ml: 1 }}
+                            >
+                              <Launch fontSize="small" />
+                            </IconButton>
+                          )}
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                           {endpoint}
                         </Typography>
                         <Chip

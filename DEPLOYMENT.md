@@ -240,7 +240,7 @@ WATCHDOG_PORT="50051"           # Watchdog 服务端口
 ```bash
 # 应用配置
 NODE_ENV="production"           # 运行环境
-PORT="3000"                    # 应用端口
+PORT="30010"                   # 应用端口
 HOSTNAME="0.0.0.0"             # 绑定主机
 
 # 应用信息
@@ -273,8 +273,8 @@ env.template            # 环境变量模板
 
 ```bash
 # 查看端口占用
-lsof -i :3000
-netstat -tulpn | grep :3000
+lsof -i :30010
+netstat -tulpn | grep :30010
 
 # 杀死进程
 kill -9 <PID>
@@ -325,7 +325,7 @@ pm2 logs homeland
 
 ```bash
 # 应用健康检查
-wget --no-verbose --tries=1 --spider http://localhost:3000/api/health
+wget --no-verbose --tries=1 --spider http://localhost:30010/api/health
 
 # Docker 健康检查
 docker inspect homeland-app | grep Health -A 10

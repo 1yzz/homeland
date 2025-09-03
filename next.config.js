@@ -7,15 +7,7 @@ const nextConfig = {
   // Configure for full-stack app
   experimental: {
     esmExternals: true,
-    // Enable SWC minification for faster builds
-    swcMinify: true,
-    // Enable concurrent features
-    concurrentFeatures: true,
   },
-  // Optimize build performance
-  swcMinify: true,
-  // Disable telemetry for faster builds
-  telemetry: false,
   // Optimize image handling
   images: {
     unoptimized: true, // Disable image optimization for faster builds
