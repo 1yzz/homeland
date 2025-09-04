@@ -117,19 +117,5 @@ export const darkTheme = createTheme({
         },
       },
     },
-    MuiDataGrid: {
-      styleOverrides: {
-        root: {
-          border: '1px solid #334155',
-          '& .MuiDataGrid-cell': {
-            borderColor: '#334155',
-          },
-          '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: '#334155',
-            borderColor: '#334155',
-          },
-        },
-      },
-    },
   },
 })
