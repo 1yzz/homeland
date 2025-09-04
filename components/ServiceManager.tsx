@@ -102,13 +102,14 @@ const ServiceManager: React.FC = () => {
   })
 
   const columns: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 100 },
-    { field: 'name', headerName: 'Name', width: 200 },
-    { field: 'endpoint', headerName: 'Endpoint', width: 300 },
+    { field: 'id', headerName: 'ID', flex: 0.5, minWidth: 80 },
+    { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
+    { field: 'endpoint', headerName: 'Endpoint', flex: 2, minWidth: 200 },
     {
       field: 'type',
       headerName: 'Type',
-      width: 150,
+      flex: 0.8,
+      minWidth: 120,
       renderCell: (params) => (
         <Chip
           label={getServiceTypeLabel(params.value)}
@@ -120,7 +121,8 @@ const ServiceManager: React.FC = () => {
     {
       field: 'status',
       headerName: 'Status',
-      width: 120,
+      flex: 0.6,
+      minWidth: 100,
       renderCell: (params) => (
         <Chip
           label={params.value}
@@ -139,7 +141,8 @@ const ServiceManager: React.FC = () => {
       field: 'actions',
       type: 'actions',
       headerName: 'Actions',
-      width: 120,
+      flex: 0.6,
+      minWidth: 120,
       getActions: (params) => [
         <GridActionsCellItem
           icon={<Edit />}
@@ -207,6 +210,7 @@ const ServiceManager: React.FC = () => {
             },
           }}
           disableRowSelectionOnClick
+          sx={{ width: '100%' }}
         />
       </Box>
 

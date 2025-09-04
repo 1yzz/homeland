@@ -98,26 +98,11 @@ const Dashboard: React.FC = () => {
       <Box sx={{ p: 3 }}>
       {/* Header Section */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
-            Service Management Dashboard
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Monitor and manage your services with Watchdog SDK v1.0.7
-          </Typography>
-        </Box>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <Typography variant="caption" color="text.secondary">
               Server: {serverIP}
-            </Typography>
-            <Chip 
-              icon={<Update />} 
-              label="SDK v1.0.7" 
-              size="small" 
-              color="success" 
-              variant="outlined"
-            />
+            </Typography>        
           </Box>
           <Button
             variant="outlined"
@@ -129,27 +114,6 @@ const Dashboard: React.FC = () => {
           </Button>
         </Box>
       </Box>
-
-      {/* SDK Update Notice */}
-      <Paper sx={{ p: 3, mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={8}>
-            <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
-              <Update sx={{ mr: 1 }} />
-              Watchdog SDK Updated to v1.0.7
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              Enhanced service registration, improved error handling, and better type support including systemd services.
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
-              <Chip icon={<Security />} label="Enhanced Security" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-              <Chip icon={<Speed />} label="Better Performance" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }} />
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
