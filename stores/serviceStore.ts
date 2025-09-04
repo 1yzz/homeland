@@ -1,9 +1,10 @@
 import { create } from 'zustand'
+import { ServiceType } from '../utils/serviceTypes'
 
 export interface ServiceRegistration {
   name: string
   endpoint: string
-  type: number
+  type: ServiceType
 }
 
 export interface ServiceInfo {
@@ -35,8 +36,8 @@ interface ServiceStore {
   setApiBaseUrl: (url: string) => void
   fetchServices: () => Promise<void>
   registerService: (data: ServiceRegistration) => Promise<void>
+  updateService: (serviceId: string, data: ServiceRegistration) => Promise<void>
   unregisterService: (serviceId: string) => Promise<void>
-  updateServiceStatus: (serviceId: string, status: string) => Promise<void>
   clearError: () => void
 }
 
@@ -95,6 +96,33 @@ export const useServiceStore = create<ServiceStore>((set, get) => ({
     }
   },
 
+  updateService: async (serviceId: string, data: ServiceRegistration) => {
+    const { apiBaseUrl } = get()
+    set({ loading: true, error: null })
+    
+    try {
+      // Direct update using PUT method
+      const response = await fetch(`${apiBaseUrl}/services/${serviceId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.details || errorData.error || `HTTP ${response.status}`)
+      }
+      
+      await get().fetchServices()
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      set({ error: `Failed to update service: ${errorMessage}` })
+      throw error
+    } finally {
+      set({ loading: false })
+    }
+  },
+
   unregisterService: async (serviceId: string) => {
     const { apiBaseUrl } = get()
     set({ loading: true, error: null })
@@ -113,31 +141,6 @@ export const useServiceStore = create<ServiceStore>((set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       set({ error: `Failed to unregister service: ${errorMessage}` })
-    } finally {
-      set({ loading: false })
-    }
-  },
-
-  updateServiceStatus: async (serviceId: string, status: string) => {
-    const { apiBaseUrl } = get()
-    set({ loading: true, error: null })
-    
-    try {
-      const response = await fetch(`${apiBaseUrl}/services/${serviceId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      })
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.details || errorData.error || `HTTP ${response.status}`)
-      }
-      
-      await get().fetchServices()
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      set({ error: `Failed to update service status: ${errorMessage}` })
     } finally {
       set({ loading: false })
     }

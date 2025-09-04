@@ -1,4 +1,5 @@
 import { ServiceInfo } from '../stores/serviceStore'
+import { SERVICE_TYPE_LABELS } from './serviceTypes'
 
 // Helper functions to parse service data from various formats
 export function parseServiceData(service: ServiceInfo) {
@@ -70,18 +71,5 @@ export function getServiceStatus(status: string): 'success' | 'warning' | 'error
 }
 
 export function getServiceTypeLabel(type: number): string {
-  const serviceTypes: { [key: number]: string } = {
-    0: 'Unspecified',
-    1: 'HTTP',
-    2: 'gRPC',
-    3: 'Database',
-    4: 'Cache',
-    5: 'Queue',
-    6: 'Storage',
-    7: 'External API',
-    8: 'Microservice',
-    9: 'Other',
-  }
-  
-  return serviceTypes[type] || 'Unknown'
+  return SERVICE_TYPE_LABELS[type as keyof typeof SERVICE_TYPE_LABELS] || 'Unknown'
 }

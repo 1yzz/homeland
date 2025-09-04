@@ -33,8 +33,8 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
       watchdog-grpc-sdk:
-        specifier: ^1.0.2
-        version: 1.0.2
+        specifier: ^1.0.7
+        version: 1.0.7
       zustand:
         specifier: ^5.0.8
         version: 5.0.8(@types/react@18.3.23)(react@18.3.1)
@@ -1280,8 +1280,8 @@ packages:
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
-  watchdog-grpc-sdk@1.0.2:
-    resolution: {integrity: sha512-nJFt0Y3BF4sQkA6dBGuf64u3aPXBPP38pIZih0C1qxkzqOBIfFoeylpUBhyv/Wol5RlzJprvuhW48XWaCk3oIg==}
+  watchdog-grpc-sdk@1.0.7:
+    resolution: {integrity: sha512-NoQO4ShkolZfH0W11YpqnggWrKT+4umV7SB06pskOhnZ1LL6dDXKYsDDTYcxx+pc4/sFVIE3xlckG67ebub/2g==}
     engines: {node: '>=14.0.0'}
 
   which@2.0.2:
@@ -2565,7 +2565,7 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  watchdog-grpc-sdk@1.0.2:
+  watchdog-grpc-sdk@1.0.7:
     dependencies:
       '@grpc/grpc-js': 1.13.4
       '@grpc/proto-loader': 0.7.15

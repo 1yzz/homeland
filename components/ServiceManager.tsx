@@ -24,19 +24,6 @@ import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid'
 import { useServiceStore } from '../stores/serviceStore'
 import Header from './Header'
 import { parseServiceData, getServiceTypeLabel } from '../utils/serviceUtils'
-
-export enum ServiceType {
-  SERVICE_TYPE_UNSPECIFIED = 0,
-  SERVICE_TYPE_HTTP = 1,
-  SERVICE_TYPE_GRPC = 2,
-  SERVICE_TYPE_DATABASE = 3,
-  SERVICE_TYPE_CACHE = 4,
-  SERVICE_TYPE_QUEUE = 5,
-  SERVICE_TYPE_STORAGE = 6,
-  SERVICE_TYPE_EXTERNAL_API = 7,
-  SERVICE_TYPE_MICROSERVICE = 8,
-  SERVICE_TYPE_OTHER = 9,
-}
 import ServiceForm from './ServiceForm'
 
 const ServiceManager: React.FC = () => {

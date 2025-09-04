@@ -14,19 +14,7 @@ import {
   Alert,
 } from '@mui/material'
 import { useServiceStore, type ServiceRegistration } from '../stores/serviceStore'
-
-export enum ServiceType {
-  SERVICE_TYPE_UNSPECIFIED = 0,
-  SERVICE_TYPE_HTTP = 1,
-  SERVICE_TYPE_GRPC = 2,
-  SERVICE_TYPE_DATABASE = 3,
-  SERVICE_TYPE_CACHE = 4,
-  SERVICE_TYPE_QUEUE = 5,
-  SERVICE_TYPE_STORAGE = 6,
-  SERVICE_TYPE_EXTERNAL_API = 7,
-  SERVICE_TYPE_MICROSERVICE = 8,
-  SERVICE_TYPE_OTHER = 9,
-}
+import { ServiceType, SERVICE_TYPE_OPTIONS } from '../utils/serviceTypes'
 
 interface ServiceFormProps {
   open: boolean
@@ -41,7 +29,7 @@ interface ServiceFormProps {
 }
 
 const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, service }) => {
-  const { registerService, loading, error, clearError } = useServiceStore()
+  const { registerService, updateService, loading, error, clearError } = useServiceStore()
   const [formData, setFormData] = useState<ServiceRegistration>({
     name: '',
     endpoint: '',
@@ -53,7 +41,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, service }) => 
       setFormData({
         name: service.name || '',
         endpoint: service.endpoint || '',
-        type: service.type || ServiceType.SERVICE_TYPE_HTTP,
+        type: (service.type as ServiceType) || ServiceType.SERVICE_TYPE_HTTP,
       })
     } else {
       setFormData({
@@ -67,10 +55,34 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, service }) => 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await registerService(formData)
+      if (service?.id) {
+        // 编辑模式：检查是否有重要变更
+        const hasSignificantChanges = 
+          service.name !== formData.name || 
+          service.endpoint !== formData.endpoint || 
+          service.type !== formData.type
+        
+        if (hasSignificantChanges) {
+          // 如果有重要变更，使用删除+创建的方式
+          console.log('Significant changes detected, updating service:', service.id)
+          await updateService(service.id, formData)
+          console.log('Service updated successfully')
+        } else {
+          // 如果没有变更，直接关闭
+          console.log('No changes detected, closing form')
+          onClose()
+          return
+        }
+      } else {
+        // 创建模式：直接注册新服务
+        console.log('Creating new service')
+        await registerService(formData)
+        console.log('Service created successfully')
+      }
       onClose()
     } catch (error) {
       // Error is handled by the store
+      console.error('Service operation failed:', error)
     }
   }
 
@@ -79,17 +91,6 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, service }) => 
     onClose()
   }
 
-  const serviceTypeOptions = [
-    { value: ServiceType.SERVICE_TYPE_HTTP, label: 'HTTP Service' },
-    { value: ServiceType.SERVICE_TYPE_GRPC, label: 'gRPC Service' },
-    { value: ServiceType.SERVICE_TYPE_DATABASE, label: 'Database' },
-    { value: ServiceType.SERVICE_TYPE_CACHE, label: 'Cache' },
-    { value: ServiceType.SERVICE_TYPE_QUEUE, label: 'Queue' },
-    { value: ServiceType.SERVICE_TYPE_STORAGE, label: 'Storage' },
-    { value: ServiceType.SERVICE_TYPE_EXTERNAL_API, label: 'External API' },
-    { value: ServiceType.SERVICE_TYPE_MICROSERVICE, label: 'Microservice' },
-    { value: ServiceType.SERVICE_TYPE_OTHER, label: 'Other' },
-  ]
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -138,7 +139,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, service }) => 
                 label="Service Type"
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as ServiceType })}
               >
-                {serviceTypeOptions.map((option) => (
+                {SERVICE_TYPE_OPTIONS.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
                   </MenuItem>
@@ -154,7 +155,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, service }) => 
             variant="contained"
             disabled={loading || !formData.name || !formData.endpoint}
           >
-            {loading ? 'Saving...' : service ? 'Update' : 'Create'}
+            {loading ? 'Saving...' : service ? 'Update Service' : 'Create Service'}
           </Button>
         </DialogActions>
       </form>
